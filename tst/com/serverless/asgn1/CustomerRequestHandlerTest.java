@@ -15,11 +15,11 @@ import com.serverless.asgn1.CustomerRequestHandler;
  */
 public class CustomerRequestHandlerTest {
 
-    private static RequestClass input;
+    private static CustomerRequest input;
 
     @BeforeClass
     public static void createInput() throws IOException {
-        input = TestUtils.parse("dummy.json", RequestClass.class);
+        input = TestUtils.parse("dummy.json", CustomerRequest.class);
     }
 
     private Context createContext() {
@@ -36,7 +36,7 @@ public class CustomerRequestHandlerTest {
         CustomerRequestHandler handler = new CustomerRequestHandler();
         Context ctx = createContext();
 
-        ResponseClass output = handler.handleRequest(input, ctx);
+        CustomerResponse output = handler.handleRequest(input, ctx);
 
         // TODO: validate output here if needed.
         if (output != null) {

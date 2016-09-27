@@ -8,16 +8,17 @@ import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
-public class CustomerRequestHandler implements RequestHandler<RequestClass, ResponseClass> {
+public class CustomerRequestHandler implements RequestHandler<CustomerRequest, CustomerResponse> {
 
     @Override
-    public ResponseClass handleRequest(RequestClass request, Context context) {
+    public CustomerResponse handleRequest(CustomerRequest request, Context context) {
     	DynamoDB dynamoDB = new DynamoDB(new AmazonDynamoDBClient(
 			    new EnvironmentVariableCredentialsProvider()));
 		Table table = dynamoDB.getTable("Customer");
 		
     	if (request.operation.equals("create")) {
-    		if (request.item.email == null) return new ResponseClass("No Success", "Must Have Email");
+    		// TODO: return error if email already exists
+    		if (request.item.email == null) return new CustomerResponse("No Success", "Must Have Email");
     		Item item = new Item();
     		item.withPrimaryKey("email", request.item.email);
     		if (request.item.lastname!=null) item.withString("lastname", request.item.lastname);
@@ -27,14 +28,15 @@ public class CustomerRequestHandler implements RequestHandler<RequestClass, Resp
     		
     		// Write the item to the table 
     		table.putItem(item);
-            return new ResponseClass("Successfully updated!", "No error");
+            return new CustomerResponse("Successfully updated!", "No error");
     	} else if (request.operation.equals("query")) {
     		if (request.item.email == null) {
-    			return new ResponseClass("Unsuccessful", "email field is required");
+    			return new CustomerResponse("Unsuccessful", "email is required");
     		} else {
+    			// TODO: return error if item not found
     			Item customer = table.getItem("email", request.item.email);
-    			ResponseClass resp = new ResponseClass("Success", "");
-    			ResponseClass.Item respItem = resp.new Item();
+    			CustomerResponse resp = new CustomerResponse("Success", "");
+    			CustomerResponse.Item respItem = resp.new Item();
     			respItem.email = customer.getString("email");
     			respItem.firstname = customer.getString("firstname");
     			respItem.lastname = customer.getString("lastname");
@@ -51,7 +53,7 @@ public class CustomerRequestHandler implements RequestHandler<RequestClass, Resp
     		// TODO: return error
     	}
     	
-    	return new ResponseClass("No Success", "Invalid Request!");
+    	return new CustomerResponse("No Success", "Invalid Request!");
     }
 
 }

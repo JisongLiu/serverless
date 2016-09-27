@@ -1,7 +1,7 @@
 #Lambda Function Project Metadata
-#Tue Sep 27 16:16:59 EDT 2016
+#Tue Sep 27 16:23:51 EDT 2016
 lastInvokeShowLiveLog=false
 lastDeploymentFunctionName=CustomerRequestHandler
 lastDeploymentBucketName=lambda-function-bucket-us-east-1-1475000630168
 lastDeploymentEndpoint=https\://lambda.us-east-1.amazonaws.com/
-lastInvokeInput={\n\t"operation"\: "query",\n\t"item"\: {\n\t\t"email"\: "valid@gmail.com",\n\t\t"firstname"\: "foo",\n\t\t"lastname"\: "bar"\n\t}\n}
+lastInvokeInput={\n\t"operation"\: "create",\n\t"item"\: {\n\t\t"email"\: "customer1@gmail.com",\n\t\t"firstname"\: "foo",\n\t\t"lastname"\: "bar",\n\t\t"address"\: "abcd8888"\n\t}\n}
