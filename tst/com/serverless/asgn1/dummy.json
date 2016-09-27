@@ -1,0 +1,8 @@
+{
+	"operation": "create",
+	"item": {
+		"email": "valid@gmail.com",
+		"first name": "foo",
+		"last name": "bar"
+	}
+}

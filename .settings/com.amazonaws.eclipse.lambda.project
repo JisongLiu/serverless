@@ -1,0 +1,5 @@
+#Lambda Function Project Metadata
+#Tue Sep 27 15:12:31 EDT 2016
+lastDeploymentFunctionName=CustomerRequestHandler
+lastDeploymentBucketName=lambda-function-bucket-us-east-1-1475000630168
+lastDeploymentEndpoint=https\://lambda.us-east-1.amazonaws.com/
