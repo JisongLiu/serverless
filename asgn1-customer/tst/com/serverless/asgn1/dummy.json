@@ -1,8 +1,7 @@
 {
 	"operation": "query",
 	"item": {
-		"email": "valid@gmail.com",
-		"first name": "foo",
-		"last name": "bar"
+		"email": "addressTest@gmail.com",
+		"address_ref": "requested"
 	}
 }

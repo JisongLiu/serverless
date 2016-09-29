@@ -1,6 +1,7 @@
 package com.serverless.asgn1;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
@@ -31,11 +32,11 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
     
     @Override
     public CustomerResponse handleRequest(CustomerRequest request, Context context) {
-        context.getLogger().log("Input: " + request.toString());
+//        context.getLogger().log("Input: " + request.toString());
         
         AmazonDynamoDBClient client = new AmazonDynamoDBClient();
         DynamoDB dynamoDB = new DynamoDB(client);
-        Table customer_table = dynamoDB.getTable("Customer");
+        Table customerTable = dynamoDB.getTable("Customer");
         
         // Create operation
         if (request.operation.equals("create")) {
@@ -60,7 +61,7 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
                     .withItem(addCustomer(request))
                     .withConditionExpression("attribute_not_exists(email)");
             try {
-                customer_table.putItem(putItemSpec);
+                customerTable.putItem(putItemSpec);
                 return messageResponse("Success!");
             } catch (ConditionalCheckFailedException e) {
                 throw new IllegalArgumentException("400 Bad Request -- email already exists");
@@ -74,31 +75,58 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
             // Look up by email
             if (request.item.email != null && !request.item.email.isEmpty()) {                
                 // Validate email format
-            	if(!emailValidator.validate(request.item.email))
+            	if (!emailValidator.validate(request.item.email))
             		throw new IllegalArgumentException("400 Bad Request -- invalid email format");
 
                 // Check email existence 
-                Item customer = customer_table.getItem(new PrimaryKey("email", request.item.email));
+                Item customer = customerTable.getItem(new PrimaryKey("email", request.item.email));
                 if (customer == null) {
                     throw new IllegalArgumentException("404 Not Found -- email does not exist");
                 }
                 
-                // Return customer with the given email
-                scanResult.add(customer);
-                return queryResponse(scanResult);
+                if (request.item.address_ref != null && request.item.address_ref.equals("requested")) {
+                	// Return an address
+                    String addressId = customer.getString("address_ref");
+                    if (addressId == null) {
+                    	throw new IllegalArgumentException("400 Bad Request -- customer does not have an address");
+                    }
+
+                    Table addressTable = dynamoDB.getTable("Address");
+                    Item address = addressTable.getItem(new PrimaryKey("id", addressId));
+                    if (address == null) {
+                    	throw new IllegalArgumentException("404 Not Found -- address not found");
+                    }
+
+                    CustomerResponse resp = new CustomerResponse("Success");
+                    CustomerResponse.Item addressEntry = resp.new Item();
+                    List<String> addressComponents = Arrays.asList(
+                    		address.getString("number"),
+                    		address.getString("street"),
+                    		address.getString("city"),
+                    		address.getString("zipCode"));
+                    addressEntry.address_ref = String.join(" ", addressComponents);
+                    resp.items.add(addressEntry);
+                    
+                    return resp;
+                } else {
+	                // Return customer with the given email
+	                scanResult.add(customer);
+	                return queryResponse(scanResult);
+                }
                 
             // Look up by address
-            } else if (request.item.address_ref != null && !request.item.address_ref.isEmpty()){
+            } else if (request.item.address_ref != null && !request.item.address_ref.isEmpty()) {
 
                 // Return a list of customers with the given address
                 ScanRequest scanRequest = new ScanRequest().withTableName("Customer");
                 ScanResult allItems = client.scan(scanRequest);
                 for (Map<String, AttributeValue> item : allItems.getItems()){
                     if (item.get("address_ref") != null && item.get("address_ref").getS().equals(request.item.address_ref)) {
-                        Item customer = customer_table.getItem("email", item.get("email").getS());
+                        Item customer = customerTable.getItem("email", item.get("email").getS());
                         scanResult.add(customer);
                     }
                 }
+                
                 return queryResponse(scanResult);
             }
         }
@@ -106,23 +134,22 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         // Update operation
         else if (request.operation.equals("update")) {
             
-        } 
+        }
         
         // Delete operation
         else if (request.operation.equals("delete")) {
             // Validate email format
-        	if(!emailValidator.validate(request.item.email))
+        	if (!emailValidator.validate(request.item.email))
         		throw new IllegalArgumentException("400 Bad Request -- invalid email format");
         	
-
         	// Delete and check email existed before deletion
         	PrimaryKey pkey = new PrimaryKey("email", request.item.email);
-            Item customer = customer_table.getItem(pkey);
+            Item customer = customerTable.getItem(pkey);
             if (customer == null) {
             	throw new IllegalArgumentException("404 Not Found -- email does not exist");
             }
             
-        	customer_table.deleteItem(pkey);
+        	customerTable.deleteItem(pkey);
             List<Item> result = new ArrayList<>();
             result.add(customer);
             return queryResponse(result);
