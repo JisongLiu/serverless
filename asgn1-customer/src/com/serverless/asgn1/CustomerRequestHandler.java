@@ -1,4 +1,4 @@
-package com.serverless.asgn1;
+package assignmentone;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,10 +34,12 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         if (request.operation.equals("create")) {
         
             // Validate email field not null
-            if (request.item.email == null) return messageResponse("Must have email!");
+            if (request.item.email == null) 
+            	throw new IllegalArgumentException("400 Bad Request -- email is required");
             
             // Validate email format
-            if(!emailValidator.validate(request.item.email)) return messageResponse("Invalid email format!");
+            if(!emailValidator.validate(request.item.email))
+        		throw new IllegalArgumentException("400 Bad Request -- invalid email format");
             
             // Check existence and write item to the table 
             PutItemSpec putItemSpec = new PutItemSpec()
@@ -46,25 +48,25 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
             try {
                 customer_table.putItem(putItemSpec);
                 return messageResponse("Success!");
-            } catch(ConditionalCheckFailedException e){
-            	return messageResponse("Email already exists!");
+            } catch (ConditionalCheckFailedException e) {
+            	throw new IllegalArgumentException("400 Bad Request -- email already exists");
             }
         }
         
         // Query operation
         else if (request.operation.equals("query")) {
-            List<Item> scanResult = new ArrayList();
+            List<Item> scanResult = new ArrayList<>();
             
             // Look up by email
             if (request.item.email != null && !request.item.email.isEmpty()) {                
                 // Validate email format
             	if(!emailValidator.validate(request.item.email))
-            		throw new IllegalArgumentException("400 Bad Request -- Invalid email format");
+            		throw new IllegalArgumentException("400 Bad Request -- invalid email format");
             	
                 Item customer = customer_table.getItem("email", request.item.email);
                 // Check email existence 
                 if (customer == null) {
-                	throw new IllegalArgumentException("404 Not Found -- Email does not exist");
+                	throw new IllegalArgumentException("404 Not Found -- email does not exist");
                 }
                 
                 // Return customer with the given email
@@ -73,15 +75,9 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
                 
             // Look up by address
             } else if (request.item.address_ref != null && !request.item.address_ref.isEmpty()){
-                // TODO: return error if item not found
-                
-                // Validate address format
-                if (!request.item.address_ref.contains("Street")) {
-                    return messageResponse("Invalid Address format!");
-                }
-                // Return a list of customers with the given address instead of just one
-                ScanRequest scanRequest = new ScanRequest()
-                        .withTableName("Customer");
+            	
+                // Return a list of customers with the given address
+                ScanRequest scanRequest = new ScanRequest().withTableName("Customer");
                 ScanResult allItems = client.scan(scanRequest);
                 for (Map<String, AttributeValue> item : allItems.getItems()){
                     if (item.get("address_ref") != null && item.get("address_ref").getS().equals(request.item.address_ref)) {
@@ -90,8 +86,8 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
                     }
                 }
                 return queryResponse(scanResult);
-            } 
-        } 
+            }
+        }
         
         // Update operation
         else if (request.operation.equals("update")) {
@@ -103,7 +99,7 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
             
         }
         
-        return messageResponse("Invalid Request!");
+        throw new IllegalArgumentException("400 Bad Request -- invalid request");
     }
     
     public Item addCustomer(CustomerRequest request) {
@@ -118,11 +114,11 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
     
     public CustomerResponse queryResponse(List<Item> items) {
         CustomerResponse resp = new CustomerResponse("Success");
-        for(Item item: items){
+        for (Item item: items){
             CustomerResponse.Item respItem = resp.new Item();
-            respItem.email = item.getString("email");
-            respItem.firstname = item.getString("firstname");
-            respItem.lastname = item.getString("lastname");
+            respItem.email       = item.getString("email");
+            respItem.firstname   = item.getString("firstname");
+            respItem.lastname    = item.getString("lastname");
             respItem.phonenumber = item.getString("phonenumber");
             respItem.address_ref = item.getString("address_ref");
             resp.addItem(respItem);
