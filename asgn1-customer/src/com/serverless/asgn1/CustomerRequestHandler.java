@@ -20,10 +20,14 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 public class CustomerRequestHandler implements RequestHandler<CustomerRequest, CustomerResponse> {
-    private EmailValidator emailValidator;
+    private Validator validator;
+    private Validator.EmailValidator emailValidator;
+    private Validator.PhonenumberValidator phonenumberValidator;
     
     public CustomerRequestHandler(){
-        emailValidator = new EmailValidator();
+        validator = new Validator();
+        emailValidator = validator.new EmailValidator();
+        phonenumberValidator = validator.new PhonenumberValidator();
     }
     
     @Override
@@ -42,8 +46,15 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
                 throw new IllegalArgumentException("400 Bad Request -- email is required");
             
             // Validate email format
-            if(!emailValidator.validate(request.item.email))
+            if (!emailValidator.validate(request.item.email))
                 throw new IllegalArgumentException("400 Bad Request -- invalid email format");
+            
+            // Validate phone number format
+            if (request.item.phonenumber != null && !request.item.phonenumber.isEmpty()) {
+                if (!phonenumberValidator.validate(request.item.phonenumber)) {
+                    throw new IllegalArgumentException("400 Bad Request -- invalid phone number format");
+                }
+            }
             
             // Check existence and write item to the table 
             PutItemSpec putItemSpec = new PutItemSpec()

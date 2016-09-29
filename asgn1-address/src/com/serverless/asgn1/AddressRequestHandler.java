@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.document.DeleteItemOutcome;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
@@ -28,7 +31,7 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
         if (request.operation.equals("create")) {
         
             // Validate id field not null
-            if (request.item.id == null) return messageResponse("400 Bad Request -- id is required");
+            if (request.item.id == null) throw new IllegalArgumentException("400 Bad Request -- id is required");
             
             
             // Check existence and write item to the table 
@@ -39,7 +42,7 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
                 Address_table.putItem(putItemSpec);
                 return messageResponse("Success!");
             } catch(ConditionalCheckFailedException e){
-                return messageResponse("400 Bad Request -- id already exists");
+                throw new IllegalArgumentException("400 Bad Request -- id already exists");
             }
         }
         
