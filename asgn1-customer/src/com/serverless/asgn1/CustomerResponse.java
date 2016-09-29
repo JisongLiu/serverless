@@ -1,10 +1,10 @@
 package com.serverless.asgn1;
 
+import java.util.*;
+
 public class CustomerResponse {
-    String greetings;
-    String errors;
     String message;
-    Item item;
+    List<Item> items;
     
     public String getMessage(){
     	return message;
@@ -12,41 +12,24 @@ public class CustomerResponse {
     public void setMessage(String message){
     	this.message = message;
     }
-    
-    public String getErrors(){
-    	return errors;
-    }
-    
-    public void setErrors(String errors){
-    	this.errors = errors;
-    }
-
-    public String getGreetings() {
-        return greetings;
-    }
-
-    public void setGreetings(String greetings) {
-        this.greetings = greetings;
-    }
-    
+       
     public CustomerResponse(String message) {
         this.message = message;
-    }
-
-    public CustomerResponse(String greetings, String errors) {
-        this.greetings = greetings;
-        this.errors = errors;
+        items = new ArrayList();
     }
 
     public CustomerResponse() {
     }
     
-    public Item getItem(){
-    	return item;
+    public List<Item> getItem(){
+    	return items;
+    }
+    public void setItem(List<Item> item){
+    	this.items = item;
     }
     
-    public void setItem(Item item){
-    	this.item = item;
+    public void addItem(Item item){
+    	this.items.add(item);
     }
     
     class Item {
@@ -62,6 +45,13 @@ public class CustomerResponse {
 
         public void setEmail(String email) {
             this.email = email;
+        }
+        
+        public String getAddress(){
+        	return address_ref;
+        }
+        public void setAddress(String address){
+        	this.address_ref = address;
         }
 
         public Item(String email) {

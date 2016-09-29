@@ -1,5 +1,7 @@
 package com.serverless.asgn1;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
@@ -32,6 +34,7 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
             // Validate email field not null
             if (request.item.email == null) return messageResponse("Must have email!");
             
+            // Validate email format
             if(!emailValidator.validate(request.item.email)) return messageResponse("Invalid email format!");
                                       
             // Check existence and write item to the table 
@@ -49,6 +52,7 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         
         // Query operation
         else if (request.operation.equals("query")) {
+            List<Item> scanResult = new ArrayList();
             
             // Look up by email
             if (request.item.email != null && !request.item.email.isEmpty()) {                
@@ -59,9 +63,11 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
                 // Check email existence 
                 if(customer == null) return messageResponse("Email doesn't exist!");
                 
-                return successQueryResponse(customer);
+                // Return customer with the given email
+                scanResult.add(customer);
+                return queryResponse(scanResult);
                 
-            // Look by address
+            // Look up by address
             } else if (request.item.address_ref != null && !request.item.address_ref.isEmpty()){
                 // TODO: return error if item not found
                 
@@ -69,16 +75,17 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
                 if (!request.item.address_ref.contains("Street")) {
                     return messageResponse("Invalid Address format!");
                 }
-                // TODO: return a list of customers with the given address instead of just one
+                // Return a list of customers with the given address instead of just one
                 ScanRequest scanRequest = new ScanRequest()
                         .withTableName("Customer");
-                ScanResult result = client.scan(scanRequest);
-                for (Map<String, AttributeValue> item : result.getItems()){
+                ScanResult allItems = client.scan(scanRequest);
+                for (Map<String, AttributeValue> item : allItems.getItems()){
                     if (item.get("address_ref") != null && item.get("address_ref").getS().equals(request.item.address_ref)) {
                         Item customer = customer_table.getItem("email", item.get("email").getS());
-                        return successQueryResponse(customer);
+                        scanResult.add(customer);
                     }
                 }
+                return queryResponse(scanResult);
             } 
         } 
         
@@ -105,15 +112,17 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         return customer;
     }
     
-    public CustomerResponse successQueryResponse(Item customer) {
-        CustomerResponse resp = new CustomerResponse("Success", "No error");
-        CustomerResponse.Item respItem = resp.new Item();
-        respItem.email = customer.getString("email");
-        respItem.firstname = customer.getString("firstname");
-        respItem.lastname = customer.getString("lastname");
-        respItem.phonenumber = customer.getString("phonenumber");
-        respItem.address_ref = customer.getString("address_ref");
-        resp.setItem(respItem);
+    public CustomerResponse queryResponse(List<Item> items) {
+        CustomerResponse resp = new CustomerResponse("Success");
+        for(Item item: items){
+            CustomerResponse.Item respItem = resp.new Item();
+            respItem.email = item.getString("email");
+            respItem.firstname = item.getString("firstname");
+            respItem.lastname = item.getString("lastname");
+            respItem.phonenumber = item.getString("phonenumber");
+            respItem.address_ref = item.getString("address_ref");
+            resp.addItem(respItem);
+        }
         return resp;
     }
     
