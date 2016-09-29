@@ -47,10 +47,10 @@ public class CustomerResponse {
             this.email = email;
         }
         
-        public String getAddress(){
+        public String getAddress_ref(){
         	return address_ref;
         }
-        public void setAddress(String address){
+        public void setAddress_ref(String address){
         	this.address_ref = address;
         }
 
