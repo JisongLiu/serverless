@@ -99,12 +99,10 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
 
                     CustomerResponse resp = new CustomerResponse("Success");
                     CustomerResponse.Item addressEntry = resp.new Item();
-                    List<String> addressComponents = Arrays.asList(
-                    		address.getString("number"),
-                    		address.getString("street"),
-                    		address.getString("city"),
-                    		address.getString("zipCode"));
-                    addressEntry.address_ref = String.join(" ", addressComponents);
+                    String addressString = address.getString("number") + " " + 
+                    		address.getString("street") + ", " + 
+                    		address.getString("city") + " " + address.getString("zipCode");
+                    addressEntry.address_ref = addressString;
                     resp.items.add(addressEntry);
                     
                     return resp;
