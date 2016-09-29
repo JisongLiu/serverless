@@ -58,6 +58,18 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
         
         // Delete operation
         else if (request.operation.equals("delete")) {
+
+        	// Delete and check address existed before deletion
+        	PrimaryKey pkey = new PrimaryKey("id", request.item.id);
+            Item address = Address_table.getItem(pkey);
+            if (address == null) {
+            	throw new IllegalArgumentException("404 Not Found -- address does not exist");
+            }
+            
+        	Address_table.deleteItem(pkey);
+            List<Item> result = new ArrayList<>();
+            result.add(address);
+            return queryResponse(result);
             
         }
         
