@@ -27,9 +27,16 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
         DynamoDB dynamoDB = new DynamoDB(client);
         Table Address_table = dynamoDB.getTable("Address");
         
+        if(request.item.zipCode!=null && !request.item.zipCode.isEmpty()){
+            ZIPValidator zipValidator = new ZIPValidator();
+            if(!zipValidator.validate(request.item.zipCode)){
+                throw new IllegalArgumentException("400 Bad Request -- the zip Code is Illegal");
+            }
+        }
+
         // Create operation
         if (request.operation.equals("create")) {
-        
+            
             // Validate id field not null
             if (request.item.id == null) throw new IllegalArgumentException("400 Bad Request -- id is required");
             
