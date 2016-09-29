@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
+import com.amazonaws.services.dynamodbv2.document.DeleteItemOutcome;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.PrimaryKey;
 import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
@@ -62,9 +65,9 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
                 // Validate email format
             	if(!emailValidator.validate(request.item.email))
             		throw new IllegalArgumentException("400 Bad Request -- invalid email format");
-            	
-                Item customer = customer_table.getItem("email", request.item.email);
+
                 // Check email existence 
+                Item customer = customer_table.getItem(new PrimaryKey("email", request.item.email));
                 if (customer == null) {
                 	throw new IllegalArgumentException("404 Not Found -- email does not exist");
                 }
@@ -101,7 +104,21 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         
         // Delete operation
         else if (request.operation.equals("delete")) {
+            // Validate email format
+        	if(!emailValidator.validate(request.item.email))
+        		throw new IllegalArgumentException("400 Bad Request -- invalid email format");
+        	
+
+        	// Delete and check email existed before deletion
+            Item customer = customer_table.getItem(new PrimaryKey("email", request.item.email));
+            if (customer == null) {
+            	throw new IllegalArgumentException("404 Not Found -- email does not exist");
+            }
             
+        	customer_table.deleteItem(new PrimaryKey("email", request.item.email));            
+            List<Item> result = new ArrayList<>();
+            result.add(customer);
+            return queryResponse(result);
         }
         
         throw new IllegalArgumentException("400 Bad Request -- invalid request");
@@ -119,7 +136,7 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
     
     public CustomerResponse queryResponse(List<Item> items) {
         CustomerResponse resp = new CustomerResponse("Success");
-        for (Item item: items){
+        for (Item item: items) {
             CustomerResponse.Item respItem = resp.new Item();
             respItem.email       = item.getString("email");
             respItem.firstname   = item.getString("firstname");
