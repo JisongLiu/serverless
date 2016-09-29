@@ -1,19 +1,24 @@
 package com.serverless.asgn1;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class CustomerResponse {
     String greetings;
     String errors;
-    List<Item> item = new ArrayList<Item>();
+    String message;
+    Item item;
+    
+    public String getMessage(){
+    	return message;
+    }
+    public void setMessage(String message){
+    	this.message = message;
+    }
     
     public String getErrors(){
-        return errors;
+    	return errors;
     }
     
     public void setErrors(String errors){
-        this.errors = errors;
+    	this.errors = errors;
     }
 
     public String getGreetings() {
@@ -22,6 +27,10 @@ public class CustomerResponse {
 
     public void setGreetings(String greetings) {
         this.greetings = greetings;
+    }
+    
+    public CustomerResponse(String message) {
+        this.message = message;
     }
 
     public CustomerResponse(String greetings, String errors) {
@@ -32,12 +41,12 @@ public class CustomerResponse {
     public CustomerResponse() {
     }
     
-    public List<Item> getItem(){
-        return item;
+    public Item getItem(){
+    	return item;
     }
     
-    public void addItem(Item item){
-        this.item.add(item);
+    public void setItem(Item item){
+    	this.item = item;
     }
     
     class Item {
@@ -60,7 +69,7 @@ public class CustomerResponse {
         }
         
         public Item(){
-            
+        	
         }
     }
 }

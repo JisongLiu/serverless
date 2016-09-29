@@ -1,62 +1,65 @@
 package com.serverless.asgn1;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.spec.PutItemSpec;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.amazonaws.services.dynamodbv2.model.ScanRequest;
 import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
-
 public class CustomerRequestHandler implements RequestHandler<CustomerRequest, CustomerResponse> {
-
+	private EmailValidator emailValidator;
+	
+	public CustomerRequestHandler(){
+		emailValidator = new EmailValidator();
+	}
+	
     @Override
     public CustomerResponse handleRequest(CustomerRequest request, Context context) {
         AmazonDynamoDBClient client = new AmazonDynamoDBClient();
         DynamoDB dynamoDB = new DynamoDB(client);
-        
         Table customer_table = dynamoDB.getTable("Customer");
         
         // Create operation
         if (request.operation.equals("create")) {
-            // TODO: return error if email already exists
-            
+        
             // Validate email field not null
-            if (request.item.email == null) return new CustomerResponse("No Success", "Must Have Email");
+            if (request.item.email == null) return messageResponse("Must have email!");
             
-            // Validate email not existing
-            if (customer_table.getItem("email", request.item.email) != null) {
-                return new CustomerResponse("No Success", "Email already exists");
+            if(!emailValidator.validate(request.item.email)) return messageResponse("Invalid email format!");
+                                      
+            // Check existence and write item to the table 
+            PutItemSpec putItemSpec = new PutItemSpec()
+            		.withItem(addCustomer(request))
+            		.withConditionExpression("attribute_not_exists(email)");
+            try{
+                customer_table.putItem(putItemSpec);
+                return messageResponse("Success!");
             }
-            
-            // Write the item to the table 
-            customer_table.putItem(addCustomer(request));
-            return new CustomerResponse("Successfully updated!", "No error");
+            catch(ConditionalCheckFailedException e){
+            	 return messageResponse("Email already exists!");
+            }
         } 
         
         // Query operation
         else if (request.operation.equals("query")) {
-            List<Item> scanResult = new ArrayList<Item>();
             
             // Look up by email
-            if (request.item.email != null && !request.item.email.isEmpty()) {
-                // TODO: return error if item not found
-                
+            if (request.item.email != null && !request.item.email.isEmpty()) {                
                 // Validate email format
-                if (!request.item.email.contains("@")) {
-                    return new CustomerResponse("No Success", "Email form not valid");
-                }
-                // Return the found item with the given email
+            	if(!emailValidator.validate(request.item.email)) return messageResponse("Invalid email format!"); 
+            	
                 Item customer = customer_table.getItem("email", request.item.email);
-                scanResult.add(customer);
-                return getCustomer(scanResult);
+                // Check email existence 
+                if(customer == null) return messageResponse("Email doesn't exist!");
+                
+                return successQueryResponse(customer);
                 
             // Look by address
             } else if (request.item.address_ref != null && !request.item.address_ref.isEmpty()){
@@ -64,20 +67,19 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
                 
                 // Validate address format
                 if (!request.item.address_ref.contains("Street")) {
-                    return new CustomerResponse("No Success", "Address form not valid");
+                    return messageResponse("Invalid Address format!");
                 }
-                // Return the list of found items sharing the same given address
+                // TODO: return a list of customers with the given address instead of just one
                 ScanRequest scanRequest = new ScanRequest()
                         .withTableName("Customer");
-                ScanResult allItems = client.scan(scanRequest);
-                for (Map<String, AttributeValue> item : allItems.getItems()){
+                ScanResult result = client.scan(scanRequest);
+                for (Map<String, AttributeValue> item : result.getItems()){
                     if (item.get("address_ref") != null && item.get("address_ref").getS().equals(request.item.address_ref)) {
                         Item customer = customer_table.getItem("email", item.get("email").getS());
-                        scanResult.add(customer);
+                        return successQueryResponse(customer);
                     }
                 }
-                return getCustomer(scanResult);
-            }
+            } 
         } 
         
         // Update operation
@@ -88,11 +90,9 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         // Delete operation
         else if (request.operation.equals("delete")) {
             
-        } else {
-            // TODO: return error
         }
         
-        return new CustomerResponse("No Success", "Invalid Request!");
+        return messageResponse("Invalid Request!");
     }
     
     public Item addCustomer(CustomerRequest request) {
@@ -105,18 +105,20 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         return customer;
     }
     
-    public CustomerResponse getCustomer(List<Item> items) {
-        CustomerResponse resp = new CustomerResponse("Success", "");
-        for (Item item : items) {
-            CustomerResponse.Item respItem = resp.new Item();
-            respItem.email = item.getString("email");
-            respItem.firstname = item.getString("firstname");
-            respItem.lastname = item.getString("lastname");
-            respItem.phonenumber = item.getString("phonenumber");
-            respItem.address_ref = item.getString("address_ref");
-            resp.addItem(respItem);
-        }
-        System.out.println(resp);
+    public CustomerResponse successQueryResponse(Item customer) {
+        CustomerResponse resp = new CustomerResponse("Success", "No error");
+        CustomerResponse.Item respItem = resp.new Item();
+        respItem.email = customer.getString("email");
+        respItem.firstname = customer.getString("firstname");
+        respItem.lastname = customer.getString("lastname");
+        respItem.phonenumber = customer.getString("phonenumber");
+        respItem.address_ref = customer.getString("address_ref");
+        resp.setItem(respItem);
+        return resp;
+    }
+    
+    public CustomerResponse messageResponse(String message){
+    	CustomerResponse resp = new CustomerResponse(message);
         return resp;
     }
 
