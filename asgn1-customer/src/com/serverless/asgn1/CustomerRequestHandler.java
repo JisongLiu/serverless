@@ -19,16 +19,16 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 public class CustomerRequestHandler implements RequestHandler<CustomerRequest, CustomerResponse> {
-	private EmailValidator emailValidator;
-	
-	public CustomerRequestHandler(){
-		emailValidator = new EmailValidator();
-	}
-	
+    private EmailValidator emailValidator;
+    
+    public CustomerRequestHandler(){
+        emailValidator = new EmailValidator();
+    }
+    
     @Override
     public CustomerResponse handleRequest(CustomerRequest request, Context context) {
-    	context.getLogger().log("Input: " + request.toString());
-    	
+        context.getLogger().log("Input: " + request.toString());
+        
         AmazonDynamoDBClient client = new AmazonDynamoDBClient();
         DynamoDB dynamoDB = new DynamoDB(client);
         Table customer_table = dynamoDB.getTable("Customer");
@@ -38,21 +38,21 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         
             // Validate email field not null
             if (request.item.email == null) 
-            	throw new IllegalArgumentException("400 Bad Request -- email is required");
+                throw new IllegalArgumentException("400 Bad Request -- email is required");
             
             // Validate email format
             if(!emailValidator.validate(request.item.email))
-        		throw new IllegalArgumentException("400 Bad Request -- invalid email format");
+                throw new IllegalArgumentException("400 Bad Request -- invalid email format");
             
             // Check existence and write item to the table 
             PutItemSpec putItemSpec = new PutItemSpec()
-            		.withItem(addCustomer(request))
-            		.withConditionExpression("attribute_not_exists(email)");
+                    .withItem(addCustomer(request))
+                    .withConditionExpression("attribute_not_exists(email)");
             try {
                 customer_table.putItem(putItemSpec);
                 return messageResponse("Success!");
             } catch (ConditionalCheckFailedException e) {
-            	throw new IllegalArgumentException("400 Bad Request -- email already exists");
+                throw new IllegalArgumentException("400 Bad Request -- email already exists");
             }
         }
         
@@ -69,7 +69,7 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
                 // Check email existence 
                 Item customer = customer_table.getItem(new PrimaryKey("email", request.item.email));
                 if (customer == null) {
-                	throw new IllegalArgumentException("404 Not Found -- email does not exist");
+                    throw new IllegalArgumentException("404 Not Found -- email does not exist");
                 }
                 
                 // Return customer with the given email
@@ -77,15 +77,10 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
                 return queryResponse(scanResult);
                 
             // Look up by address
-            } else if (request.item.address_ref != null && !request.item.address_ref.isEmpty()){                
-                // Validate address format
-                if (!request.item.address_ref.contains("Street")) {
-            		throw new IllegalArgumentException("400 Bad Request -- invalid address format");
-                }
-                
-                // Return a list of customers with the given address instead of just one
-                ScanRequest scanRequest = new ScanRequest()
-                        .withTableName("Customer");
+            } else if (request.item.address_ref != null && !request.item.address_ref.isEmpty()){
+
+                // Return a list of customers with the given address
+                ScanRequest scanRequest = new ScanRequest().withTableName("Customer");
                 ScanResult allItems = client.scan(scanRequest);
                 for (Map<String, AttributeValue> item : allItems.getItems()){
                     if (item.get("address_ref") != null && item.get("address_ref").getS().equals(request.item.address_ref)) {
@@ -110,12 +105,13 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         	
 
         	// Delete and check email existed before deletion
-            Item customer = customer_table.getItem(new PrimaryKey("email", request.item.email));
+        	PrimaryKey pkey = new PrimaryKey("email", request.item.email);
+            Item customer = customer_table.getItem(pkey);
             if (customer == null) {
             	throw new IllegalArgumentException("404 Not Found -- email does not exist");
             }
             
-        	customer_table.deleteItem(new PrimaryKey("email", request.item.email));            
+        	customer_table.deleteItem(pkey);
             List<Item> result = new ArrayList<>();
             result.add(customer);
             return queryResponse(result);
@@ -149,7 +145,7 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
     }
     
     public CustomerResponse messageResponse(String message){
-    	CustomerResponse resp = new CustomerResponse(message);
+        CustomerResponse resp = new CustomerResponse(message);
         return resp;
     }
 
