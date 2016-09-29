@@ -1,4 +1,4 @@
-package assignmentone;
+package com.serverless.asgn1;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,16 +16,16 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 public class CustomerRequestHandler implements RequestHandler<CustomerRequest, CustomerResponse> {
-	private EmailValidator emailValidator;
-	
-	public CustomerRequestHandler(){
-		emailValidator = new EmailValidator();
-	}
-	
+    private EmailValidator emailValidator;
+    
+    public CustomerRequestHandler(){
+        emailValidator = new EmailValidator();
+    }
+    
     @Override
     public CustomerResponse handleRequest(CustomerRequest request, Context context) {
-    	context.getLogger().log("Input: " + request.toString());
-    	
+        context.getLogger().log("Input: " + request.toString());
+        
         AmazonDynamoDBClient client = new AmazonDynamoDBClient();
         DynamoDB dynamoDB = new DynamoDB(client);
         Table customer_table = dynamoDB.getTable("Customer");
@@ -35,38 +35,38 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         
             // Validate email field not null
             if (request.item.email == null) 
-            	throw new IllegalArgumentException("400 Bad Request -- email is required");
+                throw new IllegalArgumentException("400 Bad Request -- email is required");
             
             // Validate email format
             if(!emailValidator.validate(request.item.email))
-        		throw new IllegalArgumentException("400 Bad Request -- invalid email format");
+                throw new IllegalArgumentException("400 Bad Request -- invalid email format");
             
             // Check existence and write item to the table 
             PutItemSpec putItemSpec = new PutItemSpec()
-            		.withItem(addCustomer(request))
-            		.withConditionExpression("attribute_not_exists(email)");
+                    .withItem(addCustomer(request))
+                    .withConditionExpression("attribute_not_exists(email)");
             try {
                 customer_table.putItem(putItemSpec);
                 return messageResponse("Success!");
             } catch (ConditionalCheckFailedException e) {
-            	throw new IllegalArgumentException("400 Bad Request -- email already exists");
+                throw new IllegalArgumentException("400 Bad Request -- email already exists");
             }
         }
         
         // Query operation
         else if (request.operation.equals("query")) {
-            List<Item> scanResult = new ArrayList<>();
+            List<Item> scanResult = new ArrayList();
             
             // Look up by email
             if (request.item.email != null && !request.item.email.isEmpty()) {                
                 // Validate email format
-            	if(!emailValidator.validate(request.item.email))
-            		throw new IllegalArgumentException("400 Bad Request -- invalid email format");
-            	
+                if(!emailValidator.validate(request.item.email))
+                    throw new IllegalArgumentException("400 Bad Request -- invalid email format");
+                
                 Item customer = customer_table.getItem("email", request.item.email);
                 // Check email existence 
                 if (customer == null) {
-                	throw new IllegalArgumentException("404 Not Found -- email does not exist");
+                    throw new IllegalArgumentException("404 Not Found -- email does not exist");
                 }
                 
                 // Return customer with the given email
@@ -75,7 +75,7 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
                 
             // Look up by address
             } else if (request.item.address_ref != null && !request.item.address_ref.isEmpty()){
-            	
+
                 // Return a list of customers with the given address
                 ScanRequest scanRequest = new ScanRequest().withTableName("Customer");
                 ScanResult allItems = client.scan(scanRequest);
@@ -127,7 +127,7 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
     }
     
     public CustomerResponse messageResponse(String message){
-    	CustomerResponse resp = new CustomerResponse(message);
+        CustomerResponse resp = new CustomerResponse(message);
         return resp;
     }
 
