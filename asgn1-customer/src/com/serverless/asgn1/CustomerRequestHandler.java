@@ -24,6 +24,8 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
 	
     @Override
     public CustomerResponse handleRequest(CustomerRequest request, Context context) {
+    	context.getLogger().log("Input: " + request.toString());
+    	
         AmazonDynamoDBClient client = new AmazonDynamoDBClient();
         DynamoDB dynamoDB = new DynamoDB(client);
         Table customer_table = dynamoDB.getTable("Customer");
@@ -36,19 +38,18 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
             
             // Validate email format
             if(!emailValidator.validate(request.item.email)) return messageResponse("Invalid email format!");
-                                      
+            
             // Check existence and write item to the table 
             PutItemSpec putItemSpec = new PutItemSpec()
             		.withItem(addCustomer(request))
             		.withConditionExpression("attribute_not_exists(email)");
-            try{
+            try {
                 customer_table.putItem(putItemSpec);
                 return messageResponse("Success!");
+            } catch(ConditionalCheckFailedException e){
+            	return messageResponse("Email already exists!");
             }
-            catch(ConditionalCheckFailedException e){
-            	 return messageResponse("Email already exists!");
-            }
-        } 
+        }
         
         // Query operation
         else if (request.operation.equals("query")) {
@@ -57,11 +58,14 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
             // Look up by email
             if (request.item.email != null && !request.item.email.isEmpty()) {                
                 // Validate email format
-            	if(!emailValidator.validate(request.item.email)) return messageResponse("Invalid email format!"); 
+            	if(!emailValidator.validate(request.item.email))
+            		throw new IllegalArgumentException("400 Bad Request -- Invalid email format");
             	
                 Item customer = customer_table.getItem("email", request.item.email);
                 // Check email existence 
-                if(customer == null) return messageResponse("Email doesn't exist!");
+                if (customer == null) {
+                	throw new IllegalArgumentException("404 Not Found -- Email does not exist");
+                }
                 
                 // Return customer with the given email
                 scanResult.add(customer);
