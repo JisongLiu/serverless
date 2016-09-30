@@ -58,7 +58,16 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
         
         // Query operation
         else if (request.operation.equals("query")) {
-             
+            List<Item> scanResult = new ArrayList();
+            if (request.item.id != null && !request.item.id.isEmpty()) {                
+                
+                Item Address = Address_table.getItem(new PrimaryKey("id", request.item.id));
+                if (Address == null) {
+                    throw new IllegalArgumentException("404 Not Found -- email does not exist");
+                }
+                scanResult.add(Address);
+                return queryResponse(scanResult);
+            }  
         } 
         
         // Update operation
