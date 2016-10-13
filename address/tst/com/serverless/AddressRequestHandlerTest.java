@@ -1,4 +1,4 @@
-package com.serverless.asgn1;
+package com.serverless;
 
 import java.io.IOException;
 
@@ -6,20 +6,21 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.amazonaws.services.lambda.runtime.Context;
-
-import com.amazonaws.services.lambda.runtime.events.S3Event;
-import com.serverless.asgn1.CustomerRequestHandler;
+import com.serverless.AddressRequest;
+import com.serverless.AddressRequestHandler;
+import com.serverless.AddressResponse;
 
 /**
  * A simple test harness for locally invoking your Lambda function handler.
  */
-public class CustomerRequestHandlerTest {
+public class AddressRequestHandlerTest {
 
-    private static CustomerRequest input;
+    private static AddressRequest input;
 
     @BeforeClass
     public static void createInput() throws IOException {
-        input = TestUtils.parse("dummy.json", CustomerRequest.class);
+        // TODO: set up your sample input object here.
+        input = null;
     }
 
     private Context createContext() {
@@ -32,11 +33,11 @@ public class CustomerRequestHandlerTest {
     }
 
     @Test
-    public void testGetCustomer() {
-        CustomerRequestHandler handler = new CustomerRequestHandler();
+    public void testAddressRequestHandler() {
+        AddressRequestHandler handler = new AddressRequestHandler();
         Context ctx = createContext();
 
-        CustomerResponse output = handler.handleRequest(input, ctx);
+        AddressResponse output = handler.handleRequest(input, ctx);
 
         // TODO: validate output here if needed.
         if (output != null) {

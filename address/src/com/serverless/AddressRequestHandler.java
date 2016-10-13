@@ -1,4 +1,4 @@
-package com.serverless.asgn1;
+package com.serverless;
 
 import java.util.ArrayList;
 import java.util.Arrays;

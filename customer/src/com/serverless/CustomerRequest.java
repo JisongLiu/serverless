@@ -1,4 +1,4 @@
-package com.serverless.asgn1;
+package com.serverless;
 
 public class CustomerRequest {
 	

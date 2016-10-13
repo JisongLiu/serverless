@@ -1,4 +1,4 @@
-package com.serverless.asgn1;
+package com.serverless;
 
 import java.io.InputStream;
 import java.io.IOException;

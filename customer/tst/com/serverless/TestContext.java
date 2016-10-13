@@ -1,4 +1,4 @@
-package com.serverless.asgn1;
+package com.serverless;
 
 import com.amazonaws.services.lambda.runtime.ClientContext;
 import com.amazonaws.services.lambda.runtime.CognitoIdentity;
