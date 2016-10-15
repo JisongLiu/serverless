@@ -1,4 +1,4 @@
-package com.serverless;
+package com.serverless.customer;
 
 public class CustomerRequest {
 	

@@ -1,4 +1,4 @@
-package com.serverless;
+package com.serverless.customer;
 
 import java.util.ArrayList;
 import java.util.Arrays;

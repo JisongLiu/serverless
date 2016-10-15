@@ -1,4 +1,4 @@
-package com.serverless;
+package com.serverless.customer;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
