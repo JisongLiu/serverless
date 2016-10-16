@@ -22,6 +22,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 
 public class CustomerRequestHandler implements RequestHandler<CustomerRequest, CustomerResponse> {
+	public final int SAMPLE_SIZE = 10; // number of customers returned when a sample is requested
+	
     private Validator validator;
     private Validator.EmailValidator emailValidator;
     private Validator.PhonenumberValidator phonenumberValidator;
@@ -129,6 +131,27 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
                 }
                 
                 return queryResponse(scanResult);
+                
+            // return 10 random items
+            } else {
+            	ScanRequest scanRequest = new ScanRequest()
+            			.withTableName("Customer")
+            			.withLimit(SAMPLE_SIZE);
+            	ScanResult sampleItems = client.scan(scanRequest);
+            	
+            	// TODO: clean up this code (lots of overlapping with queryResponse)
+                CustomerResponse resp = new CustomerResponse("Success");
+                for (Map<String, AttributeValue> item : sampleItems.getItems()) {
+                    CustomerResponse.Item respItem = resp.new Item();
+                    respItem.email       = item.get("email").getS();
+                    respItem.firstname   = item.get("firstname") == null ? null : item.get("firstname").getS();
+                    respItem.lastname    = item.get("lastname") == null ? null : item.get("lastname").getS();
+                    respItem.phonenumber = item.get("phonenumber") == null ? null : item.get("phonenumber").getS();
+                    respItem.address_ref = item.get("address_ref") == null ? null : item.get("address_ref").getS();
+                    resp.addItem(respItem);
+                }
+                
+                return resp;
             }
         }
         
