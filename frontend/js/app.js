@@ -56,21 +56,28 @@ app.controller('CustomerListController', function CustomerListController($scope,
     $scope.customers = Customers.get();
     $scope.deleteCustomer = function(customer) {
         if (popupService.showPopup('Really delete customer?')) {
-            Customer.delete({"email": customer.email});
-            $state.go('customerList');
+            Customer.delete({"email": customer.email}, function() {
+                $state.go('customerList');
+            });
         }
     };
-}).controller('CustomerEditController', function($scope, $stateParams, Customer, Address) {
+}).controller('CustomerEditController', function($scope, $state, $stateParams, Customer, Address) {
     $scope.customer = Customer.get({ email: $stateParams.email }, function(c) {
         $scope.address  = Address.get({ id: c.item[0].address_ref });
     });
 
     $scope.updateCustomer = function() {
-        // TODO: do something
+        // TODO
+        console.log($scope.customer.item[0]);
+        console.log($scope.address.item[0]);
     };
 }).controller('CustomerCreateController', function($scope) {
+    $scope.customer = {};
+    $scope.address  = {};
     $scope.addCustomer = function() {
         // TODO
+        console.log($scope.customer);
+        console.log($scope.address);
     };
 }).controller('AddressListController', function($scope) {
     // TODO: optional

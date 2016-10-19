@@ -6,46 +6,46 @@
   <form class="ui form" ng-submit="updateCustomer()">
     <div class="field">
       <label>E-mail</label>
-      <input type="text" name="email" placeholder="someone@example.com" value="{{ customer.item[0].email }}" readonly>
+      <input type="text" ng-model="customer.item[0].email" name="email" placeholder="someone@example.com" readonly>
     </div>
     <div class="field">
       <label>Name</label>
       <div class="two fields">
         <div class="field">
-          <input type="text" name="first-name" placeholder="First Name" value="{{ customer.item[0].firstname }}">
+          <input type="text" ng-model="customer.item[0].firstname" name="first-name" placeholder="First Name">
         </div>
         <div class="field">
-          <input type="text" name="last-name" placeholder="Last Name" value="{{ customer.item[0].lastname }}">
+          <input type="text" ng-model="customer.item[0].lastname" name="last-name" placeholder="Last Name">
         </div>
       </div>
     </div>
     <div class="field">
       <label>Phone Number</label>
-      <input type="text" name="phone-number" placeholder="(xxx)-xxx-xxxx" value="{{ customer.item[0].phonenumber }}">
+      <input type="text" ng-model="customer.item[0].phonenumber" name="phone-number" placeholder="(xxx)-xxx-xxxx">
     </div>
     <div class="field">
       <label>Address</label>
       <div class="fields">
         <div class="ten wide field">
-          <input type="text" name="address-1" placeholder="Street Address" value="{{ address.item[0].street }}">
+          <input type="text" ng-model="address.item[0].street" name="address-1" placeholder="Street Address">
         </div>
         <div class="six wide field">
-          <input type="text" name="address-2" placeholder="Apt #" value="{{ address.item[0].number }}">
+          <input type="text" ng-model="address.item[0].number" name="address-2" placeholder="Apt #">
         </div>
       </div>
     </div>
     <div class="three fields">
       <div class="six wide field">
         <label>City</label>
-        <input type="text" name="city" placeholder="City" value="{{ address.item[0].city }}">
+        <input type="text" ng-model="address.item[0].city" name="city" placeholder="City">
       </div>
       <div class="six wide field">
         <label>State</label>
-        <input type="text" name="state" placeholder="State" value="{{ address.item[0].state }}">
+        <input type="text" ng-model="address.item[0].state" name="state" placeholder="State">
       </div>
       <div class="four wide field">
         <label>ZIP Code</label>
-        <input type="text" name="zipcode" placeholder="ZIP Code" value="{{ address.item[0].zipCode }}">
+        <input type="text" ng-model="address.item[0].zipCode" name="zipcode" placeholder="ZIP Code">
       </div>
     </div>
     <button class="ui button" type="submit">Submit</button>
