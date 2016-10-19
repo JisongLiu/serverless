@@ -1,0 +1,69 @@
+<div class="ui text container">
+  <div ng-include="'partials/_navbar.html'"></div>
+  <div class="ui header">
+    <h1 class="center">Edit Customer</h1>
+  </div>
+  <form class="ui form" ng-submit="updateCustomer()">
+    <div class="field">
+      <label>E-mail</label>
+      <input type="text" name="email" placeholder="someone@example.com" value="{{ customer.item[0].email }}" readonly>
+    </div>
+    <div class="field">
+      <label>Name</label>
+      <div class="two fields">
+        <div class="field">
+          <input type="text" name="first-name" placeholder="First Name" value="{{ customer.item[0].firstname }}">
+        </div>
+        <div class="field">
+          <input type="text" name="last-name" placeholder="Last Name" value="{{ customer.item[0].lastname }}">
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label>Phone Number</label>
+      <input type="text" name="phone-number" placeholder="(xxx)-xxx-xxxx" value="{{ customer.item[0].phonenumber }}">
+    </div>
+    <div class="field">
+      <label>Address</label>
+      <div class="fields">
+        <div class="ten wide field">
+          <input type="text" name="address-1" placeholder="Street Address" value="{{ address.item[0].street }}">
+        </div>
+        <div class="six wide field">
+          <input type="text" name="address-2" placeholder="Apt #" value="{{ address.item[0].number }}">
+        </div>
+      </div>
+    </div>
+    <div class="three fields">
+      <div class="six wide field">
+        <label>City</label>
+        <input type="text" name="city" placeholder="City" value="{{ address.item[0].city }}">
+      </div>
+      <div class="six wide field">
+        <label>State</label>
+        <input type="text" name="state" placeholder="State" value="{{ address.item[0].state }}">
+      </div>
+      <div class="four wide field">
+        <label>ZIP Code</label>
+        <input type="text" name="zipcode" placeholder="ZIP Code" value="{{ address.item[0].zipCode }}">
+      </div>
+    </div>
+    <button class="ui button" type="submit">Submit</button>
+  </form>
+</div>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="http://d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/3.2/jquery.liveaddress.min.js"></script>
+<script>
+  jQuery.LiveAddress({
+    key: "22506383748684446",
+    debug: true,
+  	addresses: [{
+	  	address1: '#address-1',
+  		address2: '#address-2',
+  		locality: '#city',
+  		administrative_area: '#state',
+  		postal_code: '#zipcode'
+  	}]
+  });
+</script>
