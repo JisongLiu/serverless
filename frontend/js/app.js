@@ -65,9 +65,23 @@ app.controller('CustomerListController', function CustomerListController($scope,
     $scope.customer = Customer.get({ email: $stateParams.email }, function(c) {
         $scope.address  = Address.get({ id: c.item[0].address_ref });
     });
-
+    // Auto-complete plugin
+    var ss = jQuery.LiveAddress({
+        // Set key with requesting host's ip
+        key: '32725667464264436',
+        waitForStreet: true,
+        debug: true,
+        target: "US",
+        addresses: [{
+          address1: "#street",
+          locality: "#city",
+          administrative_area: "#state",
+          postal_code: "#zipcode"
+        }]
+    });
+    // TODO: Validate through jQuery's return type, then generate barcode
     $scope.updateCustomer = function() {
-        // TODO
+        // TODO: Pass the barcode to API gateway for put
         console.log($scope.customer.item[0]);
         console.log($scope.address.item[0]);
     };
