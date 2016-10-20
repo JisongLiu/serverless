@@ -27,7 +27,7 @@
       <label>Address</label>
       <div class="fields">
         <div class="ten wide field">
-          <input type="text" ng-model="address.item[0].street" name="address-1" placeholder="Street Address">
+          <input type="text" id="street" ng-model="address.item[0].street" name="address-1" placeholder="Street Address">
         </div>
         <div class="six wide field">
           <input type="text" ng-model="address.item[0].number" name="address-2" placeholder="Apt #">
@@ -37,33 +37,17 @@
     <div class="three fields">
       <div class="six wide field">
         <label>City</label>
-        <input type="text" ng-model="address.item[0].city" name="city" placeholder="City">
+        <input type="text" id="city" ng-model="address.item[0].city" name="city" placeholder="City">
       </div>
       <div class="six wide field">
         <label>State</label>
-        <input type="text" ng-model="address.item[0].state" name="state" placeholder="State">
+        <input type="text" id="state" ng-model="address.item[0].state" name="state" placeholder="State">
       </div>
       <div class="four wide field">
         <label>ZIP Code</label>
-        <input type="text" ng-model="address.item[0].zipCode" name="zipcode" placeholder="ZIP Code">
+        <input type="text" id="zipcode" ng-model="address.item[0].zipCode" name="zipcode" placeholder="ZIP Code">
       </div>
     </div>
     <button class="ui button" type="submit">Submit</button>
   </form>
 </div>
-
-<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
-<script src="http://d79i1fxsrar4t.cloudfront.net/jquery.liveaddress/3.2/jquery.liveaddress.min.js"></script>
-<script>
-  jQuery.LiveAddress({
-    key: "22506383748684446",
-    debug: true,
-  	addresses: [{
-	  	address1: '#address-1',
-  		address2: '#address-2',
-  		locality: '#city',
-  		administrative_area: '#state',
-  		postal_code: '#zipcode'
-  	}]
-  });
-</script>
