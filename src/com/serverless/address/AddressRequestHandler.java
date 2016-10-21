@@ -103,20 +103,25 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
                 expressValue.put(":val1", request.item.city);
                 updateQuery.append(" #a = :val1,");
             }
+            if (request.item.state != null && request.item.state.length() > 0){
+                expressName.put("#s", Constants.ADDRESS_STATE_KEY);
+                expressValue.put(":val2", request.item.state);
+                updateQuery.append(" #s = :val2,");
+            }
             if (request.item.line1 != null && request.item.line1.length() > 0){
                 expressName.put("#f", Constants.ADDRESS_LINE1_KEY);
-                expressValue.put(":val2", request.item.line1);
-                updateQuery.append(" #f = :val2,");
+                expressValue.put(":val3", request.item.line1);
+                updateQuery.append(" #f = :val3,");
             }
             if (request.item.line2 != null && request.item.line2.length() > 0){
                 expressName.put("#l", Constants.ADDRESS_LINE2_KEY);
-                expressValue.put(":val3", request.item.line2);
-                updateQuery.append(" #l = :val3,");
+                expressValue.put(":val4", request.item.line2);
+                updateQuery.append(" #l = :val4,");
             }
             if (request.item.zipcode != null && request.item.zipcode.length() > 0){
                 expressName.put("#p", Constants.ADDRESS_ZIPCODE_KEY);
-                expressValue.put(":val4", request.item.zipcode);
-                updateQuery.append(" #p = :val4,");
+                expressValue.put(":val5", request.item.zipcode);
+                updateQuery.append(" #p = :val5,");
             }
             String queryString = updateQuery.substring(0, updateQuery.length()-1);
             try {

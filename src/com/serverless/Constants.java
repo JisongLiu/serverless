@@ -14,7 +14,7 @@ public final class Constants {
 	public static final String ADDRESS_ID_KEY      = "id";
 	public static final String ADDRESS_LINE1_KEY   = "line1";
 	public static final String ADDRESS_LINE2_KEY   = "line2";
-	public static final String ADDRESS_CITY_KEY    = "state";
+	public static final String ADDRESS_CITY_KEY    = "city";
 	public static final String ADDRESS_STATE_KEY   = "state";
 	public static final String ADDRESS_ZIPCODE_KEY = "zipcode";
 }
