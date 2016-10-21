@@ -2,5 +2,32 @@
   <div ng-include="'partials/navbar.html'"></div>
   <div class="ui header">
     <h1 class="center">Addresses</h1>
+    <table class="ui blue sortable celled table">
+      <thead>
+        <tr>
+          <th class="default-sort">ID (barcode)</th>
+          <th>Line 1</th>
+          <th>Line 2</th>
+          <th>City</th>
+          <th>State</th>
+          <th>ZIP Code</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="addr in addresses.items">
+          <td>{{ addr.id }}</td>
+          <td>{{ addr.line1 }}</td>
+          <td>{{ addr.line2 }}</td>
+          <td>{{ addr.city }}</td>
+          <td>{{ addr.state }}</td>
+          <td>{{ addr.zipcode }}</td>
+          <td>
+            <a class="ui red button" ng-click="deleteAddress(customer)">delete</a>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- <a class="ui button" ui-sref="newAddress()">Add Address</a> -->
   </div>
 </div>
