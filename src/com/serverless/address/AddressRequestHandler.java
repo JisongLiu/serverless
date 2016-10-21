@@ -20,13 +20,13 @@ import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.serverless.Constants;
 
 public class AddressRequestHandler implements RequestHandler<AddressRequest, AddressResponse> {
-	
+
+    private AmazonDynamoDBClient client = new AmazonDynamoDBClient();
+    private DynamoDB dynamoDB = new DynamoDB(client);
+    private Table addressTable = dynamoDB.getTable("Address");
+    
     @Override
     public AddressResponse handleRequest(AddressRequest request, Context context) {
-        AmazonDynamoDBClient client = new AmazonDynamoDBClient();
-        DynamoDB dynamoDB = new DynamoDB(client);
-        Table addressTable = dynamoDB.getTable("Address");
-        
         if (request.item.zipcode != null && !request.item.zipcode.isEmpty()){
             ZIPValidator zipValidator = new ZIPValidator();
             if(!zipValidator.validate(request.item.zipcode)){
@@ -34,29 +34,18 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
             }
         }
 
+        // TODO: re-factor each of the operations into a separate function
+        // TODO: for create/update, check that address is valid through smartystreets
+        
         // Create operation
         if (request.operation.equals("create")) {
-            
-            // Validate id field not null
-            if (request.item.id == null) throw new IllegalArgumentException("400 Bad Request -- id is required");
-            
-            // Check existence and write item to the table 
-            PutItemSpec putItemSpec = new PutItemSpec()
-                    .withItem(addAddress(request))
-                    .withConditionExpression("attribute_not_exists(id)");
-            try {
-                addressTable.putItem(putItemSpec);
-                return messageResponse("Success!");
-            } catch(ConditionalCheckFailedException e){
-                throw new IllegalArgumentException("400 Bad Request -- id already exists");
-            }
+        	return createAddress(request.item);
         }
         
         // Query operation
         else if (request.operation.equals("query")) {
             List<Item> scanResult = new ArrayList<>();
-            if (request.item.id != null && !request.item.id.isEmpty()) {                
-                
+            if (request.item.id != null && !request.item.id.isEmpty()) {
                 Item address = addressTable.getItem(new PrimaryKey(Constants.ADDRESS_ID_KEY, request.item.id));
                 if (address == null) {
                     throw new IllegalArgumentException("404 Not Found -- email does not exist");
@@ -70,7 +59,6 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
 	        			.withLimit(Constants.SAMPLE_SIZE);
 	        	ScanResult sampleItems = client.scan(scanRequest);
 	        	
-	        	// TODO: clean up this code (lots of overlapping with queryResponse)
 	            AddressResponse resp = new AddressResponse("Success");
 	            for (Map<String, AttributeValue> mapEntry : sampleItems.getItems()) {
 	                Address respItem = new Address();
@@ -92,46 +80,7 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
         
         // Update operation
         else if (request.operation.equals("update")) {
-
-            Map<String, String> expressName = new HashMap<>();
-            Map<String, Object> expressValue = new HashMap<>();
-
-            StringBuilder updateQuery = new StringBuilder();
-            updateQuery.append("SET");
-            if (request.item.city != null && request.item.city.length() > 0){
-                expressName.put("#a", Constants.ADDRESS_CITY_KEY);
-                expressValue.put(":val1", request.item.city);
-                updateQuery.append(" #a = :val1,");
-            }
-            if (request.item.state != null && request.item.state.length() > 0){
-                expressName.put("#s", Constants.ADDRESS_STATE_KEY);
-                expressValue.put(":val2", request.item.state);
-                updateQuery.append(" #s = :val2,");
-            }
-            if (request.item.line1 != null && request.item.line1.length() > 0){
-                expressName.put("#f", Constants.ADDRESS_LINE1_KEY);
-                expressValue.put(":val3", request.item.line1);
-                updateQuery.append(" #f = :val3,");
-            }
-            if (request.item.line2 != null && request.item.line2.length() > 0){
-                expressName.put("#l", Constants.ADDRESS_LINE2_KEY);
-                expressValue.put(":val4", request.item.line2);
-                updateQuery.append(" #l = :val4,");
-            }
-            if (request.item.zipcode != null && request.item.zipcode.length() > 0){
-                expressName.put("#p", Constants.ADDRESS_ZIPCODE_KEY);
-                expressValue.put(":val5", request.item.zipcode);
-                updateQuery.append(" #p = :val5,");
-            }
-            String queryString = updateQuery.substring(0, updateQuery.length()-1);
-            try {
-                addressTable.updateItem(Constants.ADDRESS_ID_KEY, request.item.id, queryString,
-                        expressName, expressValue);
-                return messageResponse("address successfully updated");
-
-            } catch (Exception e) {
-                return messageResponse("failure");
-            }
+        	return updateAddress(request.item);
         }
         
         // Delete operation
@@ -153,14 +102,79 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
         return messageResponse("invalid request");
     }
     
-    public Item addAddress(AddressRequest request) {
+    public AddressResponse createAddress(Address addr) {
+        // Validate id field not null
+        if (addr.id == null) throw new IllegalArgumentException("400 Bad Request -- id is required");
+        
+        // Check existence and write item to the table 
+        PutItemSpec putItemSpec = new PutItemSpec()
+                .withItem(addressToDBItem(addr))
+                .withConditionExpression("attribute_not_exists(id)");
+        try {
+            addressTable.putItem(putItemSpec);
+            return messageResponse("successfully added address entry");
+        } catch (ConditionalCheckFailedException e) {
+            throw new IllegalArgumentException("400 Bad Request -- id already exists");
+        }
+    }
+    
+    public AddressResponse updateAddress(Address addr) {
+        // Validate id field not null
+        if (addr.id == null) throw new IllegalArgumentException("400 Bad Request -- id is required");
+
+        Item address = addressTable.getItem(new PrimaryKey(Constants.ADDRESS_ID_KEY, addr.id));
+        if (address == null) {
+        	return createAddress(addr);
+        }
+        
+        Map<String, String> expressName = new HashMap<>();
+        Map<String, Object> expressValue = new HashMap<>();
+
+        StringBuilder updateQuery = new StringBuilder();
+        updateQuery.append("SET");
+        if (addr.city != null && addr.city.length() > 0){
+            expressName.put("#a", Constants.ADDRESS_CITY_KEY);
+            expressValue.put(":val1", addr.city);
+            updateQuery.append(" #a = :val1,");
+        }
+        if (addr.state != null && addr.state.length() > 0){
+            expressName.put("#s", Constants.ADDRESS_STATE_KEY);
+            expressValue.put(":val2", addr.state);
+            updateQuery.append(" #s = :val2,");
+        }
+        if (addr.line1 != null && addr.line1.length() > 0){
+            expressName.put("#f", Constants.ADDRESS_LINE1_KEY);
+            expressValue.put(":val3", addr.line1);
+            updateQuery.append(" #f = :val3,");
+        }
+        if (addr.line2 != null && addr.line2.length() > 0){
+            expressName.put("#l", Constants.ADDRESS_LINE2_KEY);
+            expressValue.put(":val4", addr.line2);
+            updateQuery.append(" #l = :val4,");
+        }
+        if (addr.zipcode != null && addr.zipcode.length() > 0){
+            expressName.put("#p", Constants.ADDRESS_ZIPCODE_KEY);
+            expressValue.put(":val5", addr.zipcode);
+            updateQuery.append(" #p = :val5,");
+        }
+        String queryString = updateQuery.substring(0, updateQuery.length()-1);
+        try {
+            addressTable.updateItem(Constants.ADDRESS_ID_KEY, addr.id, queryString,
+                    expressName, expressValue);
+            return messageResponse("address successfully updated");
+        } catch (Exception e) {
+            return messageResponse("address update failed: " + e.getMessage());
+        }
+    }
+    
+    public Item addressToDBItem(Address addr) {
         Item address = new Item();
-        address.withPrimaryKey(Constants.ADDRESS_ID_KEY, request.item.id);
-        if (request.item.line1 != null) address.withString(Constants.ADDRESS_LINE1_KEY, request.item.line1);
-        if (request.item.line2 != null) address.withString(Constants.ADDRESS_LINE2_KEY, request.item.line2);
-        if (request.item.city  != null) address.withString(Constants.ADDRESS_CITY_KEY, request.item.city);
-        if (request.item.state != null) address.withString(Constants.ADDRESS_STATE_KEY, request.item.state);
-        if (request.item.zipcode != null) address.withString(Constants.ADDRESS_ZIPCODE_KEY, request.item.zipcode);
+        address.withPrimaryKey(Constants.ADDRESS_ID_KEY, addr.id);
+        if (addr.line1 != null && !addr.line1.isEmpty()) address.withString(Constants.ADDRESS_LINE1_KEY, addr.line1);
+        if (addr.line2 != null && !addr.line2.isEmpty()) address.withString(Constants.ADDRESS_LINE2_KEY, addr.line2);
+        if (addr.city  != null && !addr.city.isEmpty()) address.withString(Constants.ADDRESS_CITY_KEY, addr.city);
+        if (addr.state != null && !addr.state.isEmpty()) address.withString(Constants.ADDRESS_STATE_KEY, addr.state);
+        if (addr.zipcode != null && !addr.zipcode.isEmpty()) address.withString(Constants.ADDRESS_ZIPCODE_KEY, addr.zipcode);
         return address;
     }
     
