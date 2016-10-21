@@ -3,7 +3,7 @@ package com.serverless.customer;
 public class CustomerRequest {
 	
 	public String operation;
-	public Item item;
+	public Customer item;
     
     public String getOperation(){
     	return operation;
@@ -12,38 +12,13 @@ public class CustomerRequest {
     	this.operation  = operation;
     }
     
-    public Item getItem(){
+    public Customer getItem(){
     	return item;
     }
     
-    public void setItem(Item item){
+    public void setItem(Customer item){
     	this.item = item;
     }
 
-    public CustomerRequest() {
-    }
-    
-    class Item {
-        public String email;
-        public String lastname;
-        public String firstname;
-        public String phonenumber;
-        public String address_ref;
-        
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public Item(String email) {
-            this.email = email;
-        }
-        
-        public Item(){
-        	
-        }
-    }
+    public CustomerRequest() {}
 }

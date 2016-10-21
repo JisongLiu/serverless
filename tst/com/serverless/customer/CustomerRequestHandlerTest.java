@@ -7,7 +7,6 @@ import org.junit.Test;
 
 import com.amazonaws.services.lambda.runtime.Context;
 
-import com.amazonaws.services.lambda.runtime.events.S3Event;
 import com.serverless.customer.CustomerRequest;
 import com.serverless.customer.CustomerRequestHandler;
 import com.serverless.customer.CustomerResponse;

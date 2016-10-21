@@ -4,7 +4,7 @@ import java.util.*;
 
 public class CustomerResponse {
     String message;
-    List<Item> items;
+    List<Customer> items;
     
     public String getMessage(){
     	return message;
@@ -15,51 +15,20 @@ public class CustomerResponse {
        
     public CustomerResponse(String message) {
         this.message = message;
-        items = new ArrayList();
+        this.items = new ArrayList<>();
     }
 
     public CustomerResponse() {
     }
     
-    public List<Item> getItem(){
+    public List<Customer> getItems(){
     	return items;
     }
-    public void setItem(List<Item> item){
+    public void setItems(List<Customer> item){
     	this.items = item;
     }
     
-    public void addItem(Item item){
+    public void addItem(Customer item){
     	this.items.add(item);
-    }
-    
-    class Item {
-        public String email;
-        public String lastname;
-        public String firstname;
-        public String phonenumber;
-        public String address_ref;
-        
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-        
-        public String getAddress_ref(){
-        	return address_ref;
-        }
-        public void setAddress_ref(String address){
-        	this.address_ref = address;
-        }
-
-        public Item(String email) {
-            this.email = email;
-        }
-        
-        public Item(){
-        	
-        }
     }
 }
