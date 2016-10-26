@@ -157,7 +157,7 @@ app.controller('CustomerListController', function CustomerListController($scope,
         });
 
     };
-}).controller('CustomerCreateController', function($scope, $state, Customers) {
+}).controller('CustomerCreateController', function($scope, $state, Customers, Address) {
     $scope.customer = {};
     $scope.address  = {};
 
@@ -209,6 +209,17 @@ app.controller('CustomerListController', function CustomerListController($scope,
 
         if (addressDirty) {
             validateAddress($scope, function(barcode) {
+                var addressUpdate = {id: barcode};
+                addressUpdate.line1 = $("#address-1").val();
+                addressUpdate.line2 = $("#address-2").val();
+                addressUpdate.city = $("#city").val();
+                addressUpdate.state = $("#state").val();
+                addressUpdate.zipcode = $("#zipcode").val();
+
+                console.log("updating address");
+                console.log(addressUpdate);
+                Address.update({id: barcode}, addressUpdate);
+                
                 customerData.address_ref = barcode;
                 console.log(customerData);
                 Customers.create(customerData, function() { 
