@@ -29,16 +29,17 @@ app.config(function($stateProvider, $httpProvider) {
 });
 
 app.factory('Customers', function($resource) {
-    return $resource('https://k58s2zp6g8.execute-api.us-east-1.amazonaws.com/beta/customers/', {});
-}).factory('Customer', function($resource) {
-    return $resource('https://k58s2zp6g8.execute-api.us-east-1.amazonaws.com/beta/customers/:email', {}, {
+    return $resource('https://k58s2zp6g8.execute-api.us-east-1.amazonaws.com/beta/customers/', {}, {
         create: {
             method: 'POST'
-        },
+        }
+    });
+}).factory('Customer', function($resource) {
+    return $resource('https://k58s2zp6g8.execute-api.us-east-1.amazonaws.com/beta/customers/:email', {}, {
         update: {
             method: 'PUT'
         }
-    })
+    });
 }).factory('CustomerAddress', function($resource) {
     return $resource('https://k58s2zp6g8.execute-api.us-east-1.amazonaws.com/beta/customers/:email/address', {});
 }).factory('Address', function($resource) {
@@ -49,7 +50,7 @@ app.factory('Customers', function($resource) {
         update: {
             method: 'PUT'
         }
-    })
+    });
 });
 
 app.service('popupService', function($window) {
@@ -58,8 +59,24 @@ app.service('popupService', function($window) {
     }
 });
 
-app.controller('CustomerListController', function CustomerListController($scope, $window, $state, popupService, Customers, Customer) {
-    $scope.customers = Customers.get();
+function validateAddress($scope, callback) {
+    var addressID = $scope.ss.getMappedAddresses()[0].id();
+    $scope.ss.verify(addressID, function(response) {
+        if (response.isValid()) {
+            // if (response.isMissingSecondary()) {
+            //     popupService.showPopup("don't forget your apartment number!");
+            //     return ;
+            // }
+            var barcode = response.raw[0].delivery_point_barcode;
+            callback(barcode);
+        } else {
+            popupService.showPopup("please enter a valid address");
+        }
+    });
+};
+
+app.controller('CustomerListController', function CustomerListController($scope, $window, $state, popupService, Customer) {
+    $scope.customers = Customer.get();
     $scope.deleteCustomer = function(customer) {
         if (popupService.showPopup('Really delete customer?')) {
             Customer.delete({"email": customer.email}, function() {
@@ -89,78 +106,113 @@ app.controller('CustomerListController', function CustomerListController($scope,
     });
 
     $scope.updateCustomer = function() {
-        var addressID = $scope.ss.getMappedAddresses()[0].id();
-        $scope.ss.verify(addressID, function(response) {
-            if (response.isValid()) {
-                // if (response.isMissingSecondary()) {
-                //     popupService.showPopup("don't forget your apartment number!");
-                //     return ;
-                // }
-                $scope.$apply(function () {
+        validateAddress($scope, function(barcode) {
+            $scope.$apply(function() {
+                // variables indicating whether each field has been modified
+                var fname = $("#firstname").hasClass("ng-dirty");
+                var lname = $("#lastname").hasClass("ng-dirty");
+                var phone = $("#phonenumber").hasClass("ng-dirty");
+                var line1 = $("#address-1").hasClass("ng-dirty");
+                var line2 = $("#address-2").hasClass("ng-dirty");
+                var city = $("#city").hasClass("ng-dirty");
+                var state = $("#state").hasClass("ng-dirty");
+                var zipcode = $("#zipcode").hasClass("ng-dirty");
+                var addressDirty = line1 || line2 || city || state || zipcode;
+                var customerDirty = fname || lname || phone || addressDirty;
 
-                    // variables indicating whether each field has been modified
-                    var fname = $("#firstname").hasClass("ng-dirty");
-                    var lname = $("#lastname").hasClass("ng-dirty");
-                    var phone = $("#phonenumber").hasClass("ng-dirty");
-                    var line1 = $("#address-1").hasClass("ng-dirty");
-                    var line2 = $("#address-2").hasClass("ng-dirty");
-                    var city = $("#city").hasClass("ng-dirty");
-                    var state = $("#state").hasClass("ng-dirty");
-                    var zipcode = $("#zipcode").hasClass("ng-dirty");
-                    var addressDirty = line1 || line2 || city || state || zipcode;
-                    var customerDirty = fname || lname || phone || addressDirty;
+                if (customerDirty) {
+                    var customerUpdate = {};
+                    var data = $scope.customer.items[0];
+                    if (fname) { customerUpdate.firstname = $("#firstname").val(); }
+                    if (lname) { customerUpdate.lastname = $("#lastname").val();   }
+                    if (phone) { customerUpdate.phonenumber = $("#phonenumber").val(); }
+                    if (addressDirty) {
+                        var addressUpdate = {id: barcode};
+                        var addrData = $scope.address.items[0];
+                        addressUpdate.line1 = $("#address-1").val();
+                        addressUpdate.line2 = $("#address-2").val();
+                        addressUpdate.city = $("#city").val();
+                        addressUpdate.state = $("#state").val();
+                        addressUpdate.zipcode = $("#zipcode").val();
 
-                    if (customerDirty) {
-                        var customerUpdate = {};
-                        var data = $scope.customer.items[0];
-                        if (fname) { customerUpdate.firstname = $("#firstname").val(); }
-                        if (lname) { customerUpdate.lastname = $("#lastname").val();   }
-                        if (phone) { customerUpdate.phonenumber = $("#phonenumber").val(); }
-                        if (addressDirty) {
-                            var barcode = response.raw[0].delivery_point_barcode;
-                            var addressUpdate = {id: barcode};
-                            var addrData = $scope.address.items[0];
-                            addressUpdate.line1 = $("#address-1").val();
-                            addressUpdate.line2 = $("#address-2").val();
-                            addressUpdate.city = $("#city").val();
-                            addressUpdate.state = $("#state").val();
-                            addressUpdate.zipcode = $("#zipcode").val();
-
-                            console.log("updating address");
-                            console.log(addressUpdate);
-                            Address.update({id: barcode}, addressUpdate);
-                            
-                            customerUpdate.address_ref = barcode;
-                        }
+                        console.log("updating address");
+                        console.log(addressUpdate);
+                        Address.update({id: barcode}, addressUpdate);
                         
-                        console.log("updating customer");
-                        console.log(customerUpdate);
-                        Customer.update({email: $stateParams.email}, 
-                                        customerUpdate, 
-                                        function() {
-                            $state.go('customerList');
-                        });
-                        
+                        customerUpdate.address_ref = barcode;
                     }
-
-                });
-
-            } else {
-                popupService.showPopup("please enter a valid address");
-            }
+                    
+                    console.log("updating customer");
+                    console.log(customerUpdate);
+                    Customer.update({email: $stateParams.email},
+                                    customerUpdate,
+                                    function() { $state.go('customerList'); });
+                }
+            });
         });
-        // console.log($scope.customer.item[0]);
-        // console.log($scope.address.item[0]);
+
     };
-}).controller('CustomerCreateController', function($scope) {
+}).controller('CustomerCreateController', function($scope, Customers) {
     $scope.customer = {};
     $scope.address  = {};
+
+    // form validation
+    $scope.$on('$viewContentLoaded', function() {
+        $(document).ready(function() {
+            $('.ui.form').form({
+                on: 'blur',
+                fields: {
+                    email: {
+                        identifier: 'email',
+                        rules: [{
+                            type: 'email',
+                            prompt: 'please enter a valid email address'
+                        }]
+                    },
+                    firstname: {
+                        identifier: 'first-name',
+                        rules: [{
+                            type: 'minLength[1]',
+                            prompt: 'first name is required'
+                        }]
+                    }
+                }
+            });
+        });
+    });
+
     $scope.addCustomer = function() {
-        // TODO
-        console.log($scope.customer);
-        console.log($scope.address);
+
+        var fname = $("#firstname").hasClass("ng-dirty");
+        var lname = $("#lastname").hasClass("ng-dirty");
+        var phone = $("#phonenumber").hasClass("ng-dirty");
+        var line1 = $("#address-1").hasClass("ng-dirty");
+        var line2 = $("#address-2").hasClass("ng-dirty");
+        var city = $("#city").hasClass("ng-dirty");
+        var state = $("#state").hasClass("ng-dirty");
+        var zipcode = $("#zipcode").hasClass("ng-dirty");
+        var addressDirty = line1 || line2 || city || state || zipcode;
+        var customerData = { };
+        if (fname) { customerData.firstname = $("#firstname").val(); }
+        if (lname) { customerData.lastname = $("#lastname").val();   }
+        if (phone) { customerData.phonenumber = $("#phonenumber").val(); }
+        
+        if (addressDirty) {
+            validateAddress($scope, function(barcode) {
+                customerData.address_ref = barcode;
+            });
+        }
+
+        console.log(customerData);
+        Customers.create(customerData, function() { $state.go('customerList'); });
     };
 }).controller('AddressListController', function($scope, Address) {
-    // TODO: optional
     $scope.addresses = Address.get();
+    $scope.deleteAddress = function(address) {
+        if (popupService.showPopup('Really delete address?')) {
+            Customer.delete({"id": address.id}, function() {
+                $state.go('addressList');
+            });
+        }
+    };
 });

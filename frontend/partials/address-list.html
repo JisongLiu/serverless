@@ -23,7 +23,7 @@
           <td>{{ addr.state }}</td>
           <td>{{ addr.zipcode }}</td>
           <td>
-            <a class="ui red button" ng-click="deleteAddress(customer)">delete</a>
+            <a class="ui red button" ng-click="deleteAddress(addr)">delete</a>
           </td>
         </tr>
       </tbody>
@@ -31,3 +31,11 @@
     <!-- <a class="ui button" ui-sref="newAddress()">Add Address</a> -->
   </div>
 </div>
+
+<script type="text/javascript" src="js/tablesort.js"></script>
+<script type="text/javascript">
+  $(document)
+    .ready(function() {
+      $('table').tablesort().data('tablesort').sort($("th.default-sort"));
+    });
+</script>

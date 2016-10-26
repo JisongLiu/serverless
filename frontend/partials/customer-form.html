@@ -1,45 +1,46 @@
 <div class="required field">
   <label>E-mail</label>
-  <input type="text" ng-model="customer.email" name="email" placeholder="someone@example.com">
+  <input type="text" id="email" ng-model="customer.email" name="email" placeholder="someone@example.com">
 </div>
-<div class="field">
+<div class="required field">
   <label>Name</label>
   <div class="two fields">
     <div class="field">
-      <input type="text" ng-model="customer.firstname" name="first-name" placeholder="First Name">
+      <input type="text" id="firstname" ng-model="customer.firstname" name="first-name" placeholder="First Name">
     </div>
     <div class="field">
-      <input type="text" ng-model="customer.lastname" name="last-name" placeholder="Last Name">
+      <input type="text" id="lastname" ng-model="customer.lastname" name="last-name" placeholder="Last Name">
     </div>
   </div>
 </div>
 <div class="field">
   <label>Phone Number</label>
-  <input type="text" ng-model="customer.phonenumber" name="phone-number" placeholder="(xxx)-xxx-xxxx">
+  <input type="text" id="phonenumber" ng-model="customer.phonenumber" name="phone-number" placeholder="(xxx)-xxx-xxxx">
 </div>
 <div class="field">
   <label>Address</label>
   <div class="fields">
     <div class="ten wide field">
-      <input type="text" ng-model="address.street" name="address-1" placeholder="Street Address">
+      <input type="text" id="address-1" ng-model="address.line1" name="address-1" placeholder="Street Address">
     </div>
     <div class="six wide field">
-      <input type="text" ng-model="address.number" name="address-2" placeholder="Apt #">
+      <input type="text" id="address-2" ng-model="address.line2" name="address-2" placeholder="Apt #">
     </div>
   </div>
 </div>
 <div class="three fields">
   <div class="six wide field">
     <label>City</label>
-    <input type="text" ng-model="address.city" name="city" placeholder="City">
+    <input type="text" id="city" ng-model="address.city" name="city" placeholder="City">
   </div>
   <div class="six wide field">
     <label>State</label>
-    <input type="text" ng-model="address.state" name="state" placeholder="State">
+    <input type="text" id="state" ng-model="address.state" name="state" placeholder="State">
   </div>
   <div class="four wide field">
     <label>ZIP Code</label>
-    <input type="text" ng-model="address.zipcode" name="zipcode" placeholder="ZIP Code">
+    <input type="text" id="zipcode" ng-model="address.zipcode" name="zipcode" placeholder="ZIP Code">
   </div>
 </div>
 <button class="ui button" type="submit">Submit</button>
+<div class="ui error message"></div>
