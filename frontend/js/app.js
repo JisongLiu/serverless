@@ -152,7 +152,7 @@ app.controller('CustomerListController', function CustomerListController($scope,
         });
 
     };
-}).controller('CustomerCreateController', function($scope, Customers) {
+}).controller('CustomerCreateController', function($scope, $state, Customers) {
     $scope.customer = {};
     $scope.address  = {};
 
@@ -192,7 +192,7 @@ app.controller('CustomerListController', function CustomerListController($scope,
         var state = $("#state").hasClass("ng-dirty");
         var zipcode = $("#zipcode").hasClass("ng-dirty");
         var addressDirty = line1 || line2 || city || state || zipcode;
-        var customerData = { };
+        var customerData = { email: $("#email").val() };
         if (fname) { customerData.firstname = $("#firstname").val(); }
         if (lname) { customerData.lastname = $("#lastname").val();   }
         if (phone) { customerData.phonenumber = $("#phonenumber").val(); }
