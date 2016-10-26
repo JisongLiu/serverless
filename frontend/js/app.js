@@ -59,6 +59,25 @@ app.service('popupService', function($window) {
     }
 });
 
+function startSmartyStreets($scope) {
+    // smartystreets auto-complete plugin
+    $scope.ss = jQuery.LiveAddress({
+        // Set key with requesting host's ip
+        key: '22506383748684446',
+        waitForStreet: true,
+        debug: false,
+        target: "US",
+        enforceVerification: true,
+        addresses: [{
+            address1: "#address-1",
+            address2: "#address-2",
+            locality: "#city",
+            administrative_area: "#state",
+            postal_code: "#zipcode"
+        }]
+    });
+}
+
 function validateAddress($scope, callback) {
     var addressID = $scope.ss.getMappedAddresses()[0].id();
     $scope.ss.verify(addressID, function(response) {
@@ -80,7 +99,7 @@ app.controller('CustomerListController', function CustomerListController($scope,
     $scope.deleteCustomer = function(customer) {
         if (popupService.showPopup('Really delete customer?')) {
             Customer.delete({"email": customer.email}, function() {
-                $state.go('customerList');
+                $state.go('customerList', {}, { reload: true });
             });
         }
     };
@@ -88,22 +107,8 @@ app.controller('CustomerListController', function CustomerListController($scope,
     $scope.customer = Customer.get({ email: $stateParams.email }, function(c) {
         $scope.address  = Address.get({ id: c.items[0].address_ref });
     });
-
-    // smartystreets auto-complete plugin
-    $scope.ss = jQuery.LiveAddress({
-        // Set key with requesting host's ip
-        key: '22506383748684446',
-        waitForStreet: true,
-        debug: false,
-        target: "US",
-        addresses: [{
-            address1: "#address-1",
-            address2: "#address-2",
-            locality: "#city",
-            administrative_area: "#state",
-            postal_code: "#zipcode"
-        }]
-    });
+    
+    startSmartyStreets($scope);
 
     $scope.updateCustomer = function() {
         validateAddress($scope, function(barcode) {
@@ -181,7 +186,10 @@ app.controller('CustomerListController', function CustomerListController($scope,
         });
     });
 
+    startSmartyStreets($scope);
+
     $scope.addCustomer = function() {
+        if (!($('.form.ui').form('is valid'))) { return; }
 
         var fname = $("#firstname").hasClass("ng-dirty");
         var lname = $("#lastname").hasClass("ng-dirty");
@@ -196,22 +204,30 @@ app.controller('CustomerListController', function CustomerListController($scope,
         if (fname) { customerData.firstname = $("#firstname").val(); }
         if (lname) { customerData.lastname = $("#lastname").val();   }
         if (phone) { customerData.phonenumber = $("#phonenumber").val(); }
-        
+
+        console.log("adding customer");
+
         if (addressDirty) {
             validateAddress($scope, function(barcode) {
                 customerData.address_ref = barcode;
+                console.log(customerData);
+                Customers.create(customerData, function() { 
+                    $state.go('customerList'); 
+                });
             });
+        } else {
+            console.log(customerData);
+            Customers.create(customerData, function() { $state.go('customerList'); });
         }
 
-        console.log(customerData);
-        Customers.create(customerData, function() { $state.go('customerList'); });
+
     };
 }).controller('AddressListController', function($scope, Address) {
     $scope.addresses = Address.get();
     $scope.deleteAddress = function(address) {
         if (popupService.showPopup('Really delete address?')) {
             Customer.delete({"id": address.id}, function() {
-                $state.go('addressList');
+                $state.go('addressList', {}, { reload: true });
             });
         }
     };
