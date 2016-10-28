@@ -17,4 +17,12 @@ public final class Constants {
 	public static final String ADDRESS_CITY_KEY    = "city";
 	public static final String ADDRESS_STATE_KEY   = "state";
 	public static final String ADDRESS_ZIPCODE_KEY = "zipcode";
+	
+	public static final String CONTENT_TABLE_NAME    = "Content";
+	public static final String CONTENT_ID_KEY     = "id";
+	public static final String CONTENT_NAME_KEY   = "name";
+	public static final String CONTENT_TYPE_KEY = "type";
+	public static final String CONTENT_FRANCHISES_KEY  = "franchises";
+	public static final String CONTENT_SERIES_KEY  = "series";
+	public static final String CONTENT_EPISODES_KEY = "episodes";
 }
