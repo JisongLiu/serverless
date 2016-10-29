@@ -65,13 +65,15 @@ public class ContentRequestHandler implements RequestHandler<ContentRequest, Con
                 
             // Look up by name
             } else if (request.item.name != null && !request.item.name.isEmpty()) {
-                // Return a list of contents with the given name
-            	Item content = contentTable.getItem(new PrimaryKey(Constants.CONTENT_NAME_KEY, request.item.name));
-                if (content == null) {
-                    throw new IllegalArgumentException("404 Not Found -- name does not exist");
+            	// Return a list of contents with the given name
+                ScanRequest scanRequest = new ScanRequest().withTableName(Constants.CONTENT_TABLE_NAME);
+                ScanResult allItems = client.scan(scanRequest);
+                for (Map<String, AttributeValue> item : allItems.getItems()){
+                    if (item.get(Constants.CONTENT_NAME_KEY) != null && item.get(Constants.CONTENT_NAME_KEY).getS().equals(request.item.name)) {
+                        Item comment = contentTable.getItem(Constants.CONTENT_ID_KEY, item.get(Constants.CONTENT_ID_KEY).getS());
+                        scanResult.add(comment);
+                    }
                 }
-                // Return content with the given name
-                scanResult.add(content);
                 return queryResponse(scanResult);
             
             // return 10 random items

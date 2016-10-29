@@ -118,11 +118,11 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
             } else if (request.item.address_ref != null && !request.item.address_ref.isEmpty()) {
 
                 // Return a list of customers with the given address
-                ScanRequest scanRequest = new ScanRequest().withTableName("Customer");
+                ScanRequest scanRequest = new ScanRequest().withTableName(Constants.CUSTOMER_TABLE_NAME);
                 ScanResult allItems = client.scan(scanRequest);
                 for (Map<String, AttributeValue> item : allItems.getItems()){
-                    if (item.get("address_ref") != null && item.get("address_ref").getS().equals(request.item.address_ref)) {
-                        Item customer = customerTable.getItem("email", item.get("email").getS());
+                    if (item.get(Constants.CUSTOMER_ADDRESS_KEY) != null && item.get(Constants.CUSTOMER_ADDRESS_KEY).getS().equals(request.item.address_ref)) {
+                        Item customer = customerTable.getItem(Constants.CUSTOMER_EMAIL_KEY, item.get(Constants.CUSTOMER_EMAIL_KEY).getS());
                         scanResult.add(customer);
                     }
                 }

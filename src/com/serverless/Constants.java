@@ -25,4 +25,10 @@ public final class Constants {
 	public static final String CONTENT_FRANCHISES_KEY  = "franchises";
 	public static final String CONTENT_SERIES_KEY  = "series";
 	public static final String CONTENT_EPISODES_KEY = "episodes";
+	
+	public static final String COMMENT_TABLE_NAME    = "Comment";
+	public static final String COMMENT_ID_KEY     = "id";
+	public static final String COMMENT_USER_KEY   = "user";
+	public static final String COMMENT_CONTENT_KEY = "content";
+	public static final String COMMENT_COMMENT_KEY  = "comment";
 }
