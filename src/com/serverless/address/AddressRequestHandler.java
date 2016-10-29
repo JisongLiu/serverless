@@ -36,7 +36,6 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
 
         // TODO: re-factor each of the operations into a separate function
         // TODO: for create/update, check that address is valid through smartystreets
-        
         // Create operation
         if (request.operation.equals("create")) {
         	return createAddress(request.item);
@@ -103,7 +102,20 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
     }
     
     public AddressResponse createAddress(Address addr) {
-        // Validate id field not null
+    	//Check whether the address exists
+    	AddressValidator av = new AddressValidator();
+    	String[] result = av.validateBySmartyStreet(addr.line1, addr.city, addr.state);
+    	if(result==null){
+    		throw new IllegalArgumentException("404 Not Found -- address doesn't exist!");
+    	}
+    	addr.id=result[0];
+    	addr.line1=result[2];
+    	addr.city=result[1];
+    	addr.state=result[3];
+    	addr.zipcode=result[3];
+    	
+    	
+    	// Validate id field not null
         if (addr.id == null) throw new IllegalArgumentException("400 Bad Request -- id is required");
         
         // Check existence and write item to the table 
@@ -119,7 +131,19 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
     }
     
     public AddressResponse updateAddress(Address addr) {
-        // Validate id field not null
+    	//Check whether the address exists
+    	AddressValidator av = new AddressValidator();
+    	String[] result = av.validateBySmartyStreet(addr.line1, addr.city, addr.state);
+    	if(result==null){
+    		throw new IllegalArgumentException("404 Not Found -- address doesn't exist!");
+    	}
+    	addr.id=result[0];
+    	addr.line1=result[2];
+    	addr.city=result[1];
+    	addr.state=result[3];
+    	addr.zipcode=result[3];
+
+    	// Validate id field not null
         if (addr.id == null) throw new IllegalArgumentException("400 Bad Request -- id is required");
 
         Item address = addressTable.getItem(new PrimaryKey(Constants.ADDRESS_ID_KEY, addr.id));
