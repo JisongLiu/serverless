@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodbv2.document.DynamoDB;
@@ -23,6 +24,10 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
     private Validator validator;
     private Validator.EmailValidator emailValidator;
     private Validator.PhonenumberValidator phonenumberValidator;
+
+    private AmazonDynamoDBClient client = new AmazonDynamoDBClient();
+    private DynamoDB dynamoDB = new DynamoDB(client);
+    private Table customerTable = dynamoDB.getTable("Customer");
     
     public CustomerRequestHandler() {
         validator = new Validator();
@@ -32,205 +37,173 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
     
     @Override
     public CustomerResponse handleRequest(CustomerRequest request, Context context) {
-//        context.getLogger().log("Input: " + request.toString());
-        
-        AmazonDynamoDBClient client = new AmazonDynamoDBClient();
-        DynamoDB dynamoDB = new DynamoDB(client);
-        Table customerTable = dynamoDB.getTable("Customer");
-        
-        // Create operation
-        if (request.operation.equals("create")) {
-        
-            // Validate email field not null
-            if (request.item.email == null) 
-                throw new IllegalArgumentException("400 Bad Request -- email is required");
-            
-            // Validate email format
-            if (!emailValidator.validate(request.item.email))
-                throw new IllegalArgumentException("400 Bad Request -- invalid email format");
-            
-            // Validate phone number format
-            if (request.item.phonenumber != null && !request.item.phonenumber.isEmpty()) {
-                if (!phonenumberValidator.validate(request.item.phonenumber)) {
-                    throw new IllegalArgumentException("400 Bad Request -- invalid phone number format");
-                }
-            }
-            
-            // Check existence and write item to the table 
-            PutItemSpec putItemSpec = new PutItemSpec()
-                    .withItem(addCustomer(request))
-                    .withConditionExpression("attribute_not_exists(email)");
-            try {
-                customerTable.putItem(putItemSpec);
-                return messageResponse("Success!");
-            } catch (ConditionalCheckFailedException e) {
-                throw new IllegalArgumentException("400 Bad Request -- email already exists");
-            }
-        }
-        
-        // Query operation
-        else if (request.operation.equals("query")) {
-            List<Item> scanResult = new ArrayList<>();
-            
-            // Look up by email
-            if (request.item.email != null && !request.item.email.isEmpty()) {                
-                // Validate email format
-            	if (!emailValidator.validate(request.item.email))
-            		throw new IllegalArgumentException("400 Bad Request -- invalid email format");
-
-                // Check email existence 
-                Item customer = customerTable.getItem(new PrimaryKey(Constants.CUSTOMER_EMAIL_KEY, request.item.email));
-                if (customer == null) {
-                    throw new IllegalArgumentException("404 Not Found -- email does not exist");
-                }
-                
-                if (request.item.address_ref != null && request.item.address_ref.equals("requested")) {
-                	// Return an address
-                    String addressId = customer.getString(Constants.CUSTOMER_ADDRESS_KEY);
-                    if (addressId == null) {
-                    	throw new IllegalArgumentException("400 Bad Request -- customer does not have an address");
-                    }
-
-                    Table addressTable = dynamoDB.getTable("Address");
-                    Item address = addressTable.getItem(new PrimaryKey(Constants.ADDRESS_ID_KEY, addressId));
-                    if (address == null) {
-                    	throw new IllegalArgumentException("404 Not Found -- address not found");
-                    }
-
-                    CustomerResponse resp = new CustomerResponse("Success");
-                    Customer addressEntry = new Customer();
-                    String addressString = address.getString(Constants.ADDRESS_LINE1_KEY) + " " +
-                    		address.getString(Constants.ADDRESS_LINE2_KEY) + ", " +
-                    		address.getString(Constants.ADDRESS_CITY_KEY) + ", " +
-                    		address.getString(Constants.ADDRESS_STATE_KEY) + " " +
-                    		address.getString(Constants.ADDRESS_ZIPCODE_KEY);
-                    addressEntry.address_ref = addressString;
-                    resp.items.add(addressEntry);
-                    
-                    return resp;
-                } else {
-	                // Return customer with the given email
-	                scanResult.add(customer);
-	                return queryResponse(scanResult);
-                }
-                
-            // Look up by address
-            } else if (request.item.address_ref != null && !request.item.address_ref.isEmpty()) {
-
-                // Return a list of customers with the given address
-                ScanRequest scanRequest = new ScanRequest().withTableName(Constants.CUSTOMER_TABLE_NAME);
-                ScanResult allItems = client.scan(scanRequest);
-                for (Map<String, AttributeValue> item : allItems.getItems()){
-                    if (item.get(Constants.CUSTOMER_ADDRESS_KEY) != null && item.get(Constants.CUSTOMER_ADDRESS_KEY).getS().equals(request.item.address_ref)) {
-                        Item customer = customerTable.getItem(Constants.CUSTOMER_EMAIL_KEY, item.get(Constants.CUSTOMER_EMAIL_KEY).getS());
-                        scanResult.add(customer);
-                    }
-                }
-                
-                return queryResponse(scanResult);
-                
-            // return 10 random items
-            } else {
-            	ScanRequest scanRequest = new ScanRequest()
-            			.withTableName(Constants.CUSTOMER_TABLE_NAME)
-            			.withLimit(Constants.SAMPLE_SIZE);
-            	ScanResult sampleItems = client.scan(scanRequest);
-            	
-            	// TODO: clean up this code (lots of overlapping with queryResponse)
-                CustomerResponse resp = new CustomerResponse("Success");
-                for (Map<String, AttributeValue> mapEntry : sampleItems.getItems()) {
-                    Customer respItem = new Customer();
-                    respItem.email       = mapEntry.get(Constants.CUSTOMER_EMAIL_KEY).getS();
-                    respItem.firstname   = mapEntry.get(Constants.CUSTOMER_FIRSTNAME_KEY) == null ? 
-                    		null : mapEntry.get(Constants.CUSTOMER_FIRSTNAME_KEY).getS();
-                    respItem.lastname    = mapEntry.get(Constants.CUSTOMER_LASTNAME_KEY) == null ? 
-                    		null : mapEntry.get(Constants.CUSTOMER_LASTNAME_KEY).getS();
-                    respItem.phonenumber = mapEntry.get(Constants.CUSTOMER_PHONE_NO_KEY) == null ? 
-                    		null : mapEntry.get(Constants.CUSTOMER_PHONE_NO_KEY).getS();
-                    respItem.address_ref = mapEntry.get(Constants.CUSTOMER_ADDRESS_KEY) == null ? 
-                    		null : mapEntry.get(Constants.CUSTOMER_ADDRESS_KEY).getS();
-                    resp.addItem(respItem);
-                }
-                
-                return resp;
-            }
-        }
-        
-        // Update operation
- 		else if (request.operation.equals("update")) {
-
- 			Map<String, String> expressName = new HashMap<>();
- 			Map<String, Object> expressValue = new HashMap<>();
-
- 			StringBuilder updateQuery = new StringBuilder();
- 			updateQuery.append("SET");
- 			if (request.item.address_ref != null && request.item.address_ref.length() > 0){
- 				expressName.put("#a", Constants.CUSTOMER_ADDRESS_KEY);
- 				expressValue.put(":val1", request.item.address_ref);
- 				updateQuery.append(" #a = :val1,");
- 			}
- 			if (request.item.firstname != null && request.item.firstname.length() > 0){
- 				expressName.put("#f", Constants.CUSTOMER_FIRSTNAME_KEY);
- 				expressValue.put(":val2", request.item.firstname);
- 				updateQuery.append(" #f = :val2,");
- 			}
- 			if (request.item.lastname != null && request.item.lastname.length() > 0){
- 				expressName.put("#l", Constants.CUSTOMER_LASTNAME_KEY);
- 				expressValue.put(":val3", request.item.lastname);
- 				updateQuery.append(" #l = :val3,");
- 			}
- 			if (request.item.phonenumber != null && request.item.phonenumber.length() > 0){
-                if (!phonenumberValidator.validate(request.item.phonenumber)) {
-                    throw new IllegalArgumentException("400 Bad Request -- invalid phone number format");
-                }
- 				expressName.put("#p", Constants.CUSTOMER_PHONE_NO_KEY);
- 				expressValue.put(":val4", request.item.phonenumber);
- 				updateQuery.append(" #p = :val4,");
- 			}
- 			String queryString = updateQuery.substring(0, updateQuery.length()-1);
- 			try {
- 				customerTable.updateItem("email", request.item.email, queryString,
- 						expressName, expressValue);
- 				return messageResponse("success updated");
-
- 			} catch (Exception e) {
- 				return messageResponse("failure!");
- 			}
- 		}
-        
-        // Delete operation
-        else if (request.operation.equals("delete")) {
-            // Validate email format
-        	if (!emailValidator.validate(request.item.email))
-        		throw new IllegalArgumentException("400 Bad Request -- invalid email format");
-        	
-        	// Delete and check email existed before deletion
-        	PrimaryKey pkey = new PrimaryKey("email", request.item.email);
-            Item customer = customerTable.getItem(pkey);
-            if (customer == null) {
-            	throw new IllegalArgumentException("404 Not Found -- email does not exist");
-            }
-            
-        	customerTable.deleteItem(pkey);
-            List<Item> result = new ArrayList<>();
-            result.add(customer);
-            return queryResponse(result);
-        }
-        
-        throw new IllegalArgumentException("400 Bad Request -- invalid request");
+    	switch (request.operation) {
+    	case "create":
+        	return createCustomer(request.item);
+    	case "query":
+        	return queryCustomer(request.item);
+    	case "update":
+ 			return updateCustomer(request.item);
+    	case "delete":
+ 			return deleteCustomer(request.item);
+ 		default:
+ 			throw new IllegalArgumentException("400 Bad Request -- unsupported operation " + request.operation);
+    	}
     }
     
-    public Item addCustomer(CustomerRequest request) {
+    public CustomerResponse createCustomer(Customer c) {
+        // Validate email field not null
+        if (c.email == null) 
+            throw new IllegalArgumentException("400 Bad Request -- email is required");
+        
+        // Validate email format
+        if (!emailValidator.validate(c.email))
+            throw new IllegalArgumentException("400 Bad Request -- invalid email format");
+        
+        // Validate phone number format
+        if (c.phonenumber != null && !c.phonenumber.isEmpty()) {
+            if (!phonenumberValidator.validate(c.phonenumber)) {
+                throw new IllegalArgumentException("400 Bad Request -- invalid phone number format");
+            }
+        }
+        
+        // Check existence and write item to the table 
+        PutItemSpec putItemSpec = new PutItemSpec()
+                .withItem(customerToDBItem(c))
+                .withConditionExpression("attribute_not_exists(email)");
+        try {
+            customerTable.putItem(putItemSpec);
+            return messageResponse("Success!");
+        } catch (ConditionalCheckFailedException e) {
+            throw new IllegalArgumentException("400 Bad Request -- email already exists");
+        }
+    }
+    
+    public CustomerResponse queryCustomer(Customer c) {
+        List<Item> scanResult = new ArrayList<>();
+        
+        // Look up by email
+        if (c.email != null && !c.email.isEmpty()) {                
+            // Validate email format
+        	if (!emailValidator.validate(c.email))
+        		throw new IllegalArgumentException("400 Bad Request -- invalid email format");
+
+            // Check email existence 
+            Item customer = customerTable.getItem(new PrimaryKey(Constants.CUSTOMER_EMAIL_KEY, c.email));
+            if (customer == null) {
+                throw new IllegalArgumentException("404 Not Found -- email does not exist");
+            }
+            
+            // Return customer with the given email
+            scanResult.add(customer);
+            return dbItemsToResponse(scanResult);
+        } else if (c.address_ref != null && !c.address_ref.isEmpty()) {
+            // Return a list of customers with the given address
+            ScanRequest scanRequest = new ScanRequest().withTableName(Constants.CUSTOMER_TABLE_NAME);
+            ScanResult allItems = client.scan(scanRequest);
+            for (Map<String, AttributeValue> item : allItems.getItems()){
+                if (item.get(Constants.CUSTOMER_ADDRESS_KEY) != null && item.get(Constants.CUSTOMER_ADDRESS_KEY).getS().equals(c.address_ref)) {
+                    Item customer = customerTable.getItem(Constants.CUSTOMER_EMAIL_KEY, item.get(Constants.CUSTOMER_EMAIL_KEY).getS());
+                    scanResult.add(customer);
+                }
+            }
+            
+            return dbItemsToResponse(scanResult);
+        } else {
+            // Return 10 arbitrary items
+        	ScanRequest scanRequest = new ScanRequest()
+        			.withTableName(Constants.CUSTOMER_TABLE_NAME)
+        			.withLimit(Constants.SAMPLE_SIZE);
+        	ScanResult sampleItems = client.scan(scanRequest);
+        	
+            CustomerResponse resp = new CustomerResponse("Success");
+            for (Map<String, AttributeValue> mapEntry : sampleItems.getItems()) {
+                Function<String, String> getField = key -> {
+                    return mapEntry.get(key) == null ? null : mapEntry.get(key).getS();
+                };
+                
+                Customer respItem = new Customer();
+                respItem.email       = mapEntry.get(Constants.CUSTOMER_EMAIL_KEY).getS();
+                respItem.firstname   = getField.apply(Constants.CUSTOMER_FIRSTNAME_KEY);
+                respItem.lastname    = getField.apply(Constants.CUSTOMER_LASTNAME_KEY);
+                respItem.phonenumber = getField.apply(Constants.CUSTOMER_PHONE_NO_KEY);
+                respItem.address_ref = getField.apply(Constants.CUSTOMER_ADDRESS_KEY);
+                resp.addItem(respItem);
+            }
+            
+            return resp;
+        }
+    }
+    
+    public CustomerResponse updateCustomer(Customer c) {
+		Map<String, String> expressName = new HashMap<>();
+		Map<String, Object> expressValue = new HashMap<>();
+
+		StringBuilder updateQuery = new StringBuilder();
+		updateQuery.append("SET");
+		if (c.address_ref != null && c.address_ref.length() > 0){
+			expressName.put("#a", Constants.CUSTOMER_ADDRESS_KEY);
+			expressValue.put(":val1", c.address_ref);
+			updateQuery.append(" #a = :val1,");
+		}
+		if (c.firstname != null && c.firstname.length() > 0){
+			expressName.put("#f", Constants.CUSTOMER_FIRSTNAME_KEY);
+			expressValue.put(":val2", c.firstname);
+			updateQuery.append(" #f = :val2,");
+		}
+		if (c.lastname != null && c.lastname.length() > 0){
+			expressName.put("#l", Constants.CUSTOMER_LASTNAME_KEY);
+			expressValue.put(":val3", c.lastname);
+			updateQuery.append(" #l = :val3,");
+		}
+		if (c.phonenumber != null && c.phonenumber.length() > 0){
+            if (!phonenumberValidator.validate(c.phonenumber)) {
+                throw new IllegalArgumentException("400 Bad Request -- invalid phone number format");
+            }
+			expressName.put("#p", Constants.CUSTOMER_PHONE_NO_KEY);
+			expressValue.put(":val4", c.phonenumber);
+			updateQuery.append(" #p = :val4,");
+		}
+		String queryString = updateQuery.substring(0, updateQuery.length()-1);
+		try {
+			customerTable.updateItem("email", c.email, queryString,
+					expressName, expressValue);
+			return messageResponse("customer successfully updated");
+
+		} catch (Exception e) {
+			return messageResponse("customer update failed: " + e.getMessage());
+		}
+    }
+    
+    public CustomerResponse deleteCustomer(Customer c) {
+        // Validate email format
+    	if (!emailValidator.validate(c.email))
+    		throw new IllegalArgumentException("400 Bad Request -- invalid email format");
+    	
+    	// Delete and check email existed before deletion
+    	PrimaryKey pkey = new PrimaryKey("email", c.email);
+        Item customer = customerTable.getItem(pkey);
+        if (customer == null) {
+        	throw new IllegalArgumentException("404 Not Found -- email does not exist");
+        }
+        
+    	customerTable.deleteItem(pkey);
+        List<Item> result = new ArrayList<>();
+        result.add(customer);
+        return dbItemsToResponse(result);
+    }
+    
+    private Item customerToDBItem(Customer c) {
         Item customer = new Item();
-        customer.withPrimaryKey(Constants.CUSTOMER_EMAIL_KEY, request.item.email);
-        if (request.item.lastname!=null) customer.withString(Constants.CUSTOMER_LASTNAME_KEY, request.item.lastname);
-        if (request.item.firstname!=null) customer.withString(Constants.CUSTOMER_FIRSTNAME_KEY, request.item.firstname);
-        if (request.item.phonenumber!=null) customer.withString(Constants.CUSTOMER_PHONE_NO_KEY, request.item.phonenumber);
-        if (request.item.address_ref!=null) customer.withString(Constants.CUSTOMER_ADDRESS_KEY, request.item.address_ref);
+        customer.withPrimaryKey(Constants.CUSTOMER_EMAIL_KEY, c.email);
+        if (c.lastname    != null) customer.withString(Constants.CUSTOMER_LASTNAME_KEY,  c.lastname);
+        if (c.firstname   != null) customer.withString(Constants.CUSTOMER_FIRSTNAME_KEY, c.firstname);
+        if (c.phonenumber != null) customer.withString(Constants.CUSTOMER_PHONE_NO_KEY,  c.phonenumber);
+        if (c.address_ref != null) customer.withString(Constants.CUSTOMER_ADDRESS_KEY,   c.address_ref);
         return customer;
     }
     
-    public CustomerResponse queryResponse(List<Item> items) {
+    private CustomerResponse dbItemsToResponse(List<Item> items) {
         CustomerResponse resp = new CustomerResponse("Success");
         for (Item item: items) {
             Customer respItem = new Customer();
@@ -244,9 +217,8 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         return resp;
     }
     
-    public CustomerResponse messageResponse(String message){
-        CustomerResponse resp = new CustomerResponse(message);
-        return resp;
+    private CustomerResponse messageResponse(String message){
+        return new CustomerResponse(message);
     }
 
 }
