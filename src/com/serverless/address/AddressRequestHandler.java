@@ -34,85 +34,31 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
             }
         }
 
-        // TODO: re-factor each of the operations into a separate function
-        // TODO: for create/update, check that address is valid through smartystreets
-        // Create operation
         if (request.operation.equals("create")) {
         	return createAddress(request.item);
-        }
-        
-        // Query operation
-        else if (request.operation.equals("query")) {
-            List<Item> scanResult = new ArrayList<>();
-            if (request.item.id != null && !request.item.id.isEmpty()) {
-                Item address = addressTable.getItem(new PrimaryKey(Constants.ADDRESS_ID_KEY, request.item.id));
-                if (address == null) {
-                    throw new IllegalArgumentException("404 Not Found -- email does not exist");
-                }
-                scanResult.add(address);
-                return queryResponse(scanResult);
-            } else {
-            	// return 10 arbitrary addresses
-	        	ScanRequest scanRequest = new ScanRequest()
-	        			.withTableName(Constants.ADDRESS_TABLE_NAME)
-	        			.withLimit(Constants.SAMPLE_SIZE);
-	        	ScanResult sampleItems = client.scan(scanRequest);
-	        	
-	            AddressResponse resp = new AddressResponse("Success");
-	            for (Map<String, AttributeValue> mapEntry : sampleItems.getItems()) {
-	                Address respItem = new Address();
-	                respItem.id    = mapEntry.get(Constants.ADDRESS_ID_KEY).getS();
-	                respItem.line1 = mapEntry.get(Constants.ADDRESS_LINE1_KEY).getS();
-	                respItem.line2 = mapEntry.get(Constants.ADDRESS_LINE2_KEY) == null ? 
-	                		null : mapEntry.get(Constants.ADDRESS_LINE2_KEY).getS();
-	                respItem.city  = mapEntry.get(Constants.ADDRESS_CITY_KEY) == null ? 
-	                		null : mapEntry.get(Constants.ADDRESS_CITY_KEY).getS();
-	                respItem.state = mapEntry.get(Constants.ADDRESS_STATE_KEY) == null ? 
-	                		null : mapEntry.get(Constants.ADDRESS_STATE_KEY).getS();
-	                respItem.zipcode = mapEntry.get(Constants.ADDRESS_ZIPCODE_KEY) == null ? 
-	                		null : mapEntry.get(Constants.ADDRESS_ZIPCODE_KEY).getS();
-	                resp.addItem(respItem);
-	            }
-	            return resp;
-            }
-        }
-        
-        // Update operation
-        else if (request.operation.equals("update")) {
+        } else if (request.operation.equals("query")) {
+        	return queryAddress(request.item);
+        } else if (request.operation.equals("update")) {
         	return updateAddress(request.item);
-        }
-        
-        // Delete operation
-        else if (request.operation.equals("delete")) {
-
-            // Delete and check address existed before deletion
-            PrimaryKey pkey = new PrimaryKey(Constants.ADDRESS_ID_KEY, request.item.id);
-            Item address = addressTable.getItem(pkey);
-            if (address == null) {
-                throw new IllegalArgumentException("404 Not Found -- address does not exist");
-            }
-            
-            addressTable.deleteItem(pkey);
-            List<Item> result = new ArrayList<>();
-            result.add(address);
-            return queryResponse(result);
+        } else if (request.operation.equals("delete")) {
+        	return deleteAddress(request.item);
         }
         
         return messageResponse("invalid request");
     }
-    
+
     public AddressResponse createAddress(Address addr) {
-    	//Check whether the address exists
+    	// Check whether the address exists
     	AddressValidator av = new AddressValidator();
     	String[] result = av.validateBySmartyStreet(addr.line1, addr.city, addr.state);
-    	if(result==null){
+    	if (result == null) {
     		throw new IllegalArgumentException("404 Not Found -- address doesn't exist!");
     	}
-    	addr.id=result[0];
-    	addr.line1=result[2];
-    	addr.city=result[1];
-    	addr.state=result[3];
-    	addr.zipcode=result[3];
+    	addr.id      = result[0];
+    	addr.line1   = result[2];
+    	addr.city    = result[1];
+    	addr.state   = result[3];
+    	addr.zipcode = result[3];
     	
     	
     	// Validate id field not null
@@ -130,8 +76,43 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
         }
     }
     
+    public AddressResponse queryAddress(Address addr) {
+        List<Item> scanResult = new ArrayList<>();
+        if (addr.id != null && !addr.id.isEmpty()) {
+            Item address = addressTable.getItem(new PrimaryKey(Constants.ADDRESS_ID_KEY, addr.id));
+            if (address == null) {
+                throw new IllegalArgumentException("404 Not Found -- email does not exist");
+            }
+            scanResult.add(address);
+            return dbItemsToResponse(scanResult);
+        } else {
+        	// return 10 arbitrary addresses
+        	ScanRequest scanRequest = new ScanRequest()
+        			.withTableName(Constants.ADDRESS_TABLE_NAME)
+        			.withLimit(Constants.SAMPLE_SIZE);
+        	ScanResult sampleItems = client.scan(scanRequest);
+        	
+            AddressResponse resp = new AddressResponse("Success");
+            for (Map<String, AttributeValue> mapEntry : sampleItems.getItems()) {
+                Address respItem = new Address();
+                respItem.id    = mapEntry.get(Constants.ADDRESS_ID_KEY).getS();
+                respItem.line1 = mapEntry.get(Constants.ADDRESS_LINE1_KEY).getS();
+                respItem.line2 = mapEntry.get(Constants.ADDRESS_LINE2_KEY) == null ? 
+                		null : mapEntry.get(Constants.ADDRESS_LINE2_KEY).getS();
+                respItem.city  = mapEntry.get(Constants.ADDRESS_CITY_KEY) == null ? 
+                		null : mapEntry.get(Constants.ADDRESS_CITY_KEY).getS();
+                respItem.state = mapEntry.get(Constants.ADDRESS_STATE_KEY) == null ? 
+                		null : mapEntry.get(Constants.ADDRESS_STATE_KEY).getS();
+                respItem.zipcode = mapEntry.get(Constants.ADDRESS_ZIPCODE_KEY) == null ? 
+                		null : mapEntry.get(Constants.ADDRESS_ZIPCODE_KEY).getS();
+                resp.addItem(respItem);
+            }
+            return resp;
+        }
+    }
+    
     public AddressResponse updateAddress(Address addr) {
-    	//Check whether the address exists
+    	// Check whether the address exists
     	AddressValidator av = new AddressValidator();
     	String[] result = av.validateBySmartyStreet(addr.line1, addr.city, addr.state);
     	if(result==null){
@@ -191,6 +172,20 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
         }
     }
     
+    public AddressResponse deleteAddress(Address addr) {
+        // Delete and check address existed before deletion
+        PrimaryKey pkey = new PrimaryKey(Constants.ADDRESS_ID_KEY, addr.id);
+        Item address = addressTable.getItem(pkey);
+        if (address == null) {
+            throw new IllegalArgumentException("404 Not Found -- address does not exist");
+        }
+        
+        addressTable.deleteItem(pkey);
+        List<Item> result = new ArrayList<>();
+        result.add(address);
+        return dbItemsToResponse(result);
+    }
+    
     public Item addressToDBItem(Address addr) {
         Item address = new Item();
         address.withPrimaryKey(Constants.ADDRESS_ID_KEY, addr.id);
@@ -202,7 +197,7 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
         return address;
     }
     
-    public AddressResponse queryResponse(List<Item> items) {
+    public AddressResponse dbItemsToResponse(List<Item> items) {
         AddressResponse resp = new AddressResponse("Success");
         for(Item item: items) {
             Address respItem = new Address();
