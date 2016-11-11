@@ -5,6 +5,7 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="com.amazonaws.eclipse.sdk.AWS_JAVA_SDK"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-    <classpathentry kind="con" path="com.amazonaws.eclipse.lambda.AWS_LAMBDA_JAVA_CLASSPATH_CONTAINER"/>
+	<classpathentry kind="con" path="com.amazonaws.eclipse.lambda.AWS_LAMBDA_JAVA_CLASSPATH_CONTAINER"/>
+	<classpathentry kind="lib" path="src/smartystreets-java-sdk-1.0.6.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
