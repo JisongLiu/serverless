@@ -18,17 +18,14 @@ import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.serverless.Constants;
+import com.serverless.DBManager;
 
 public class ContentRequestHandler implements RequestHandler<ContentRequest, ContentResponse> {	
+
+    private Table contentTable = DBManager.getTable(Constants.CONTENT_TABLE_NAME);
     
     @Override
     public ContentResponse handleRequest(ContentRequest request, Context context) {
-//        context.getLogger().log("Input: " + request.toString());
-        
-        AmazonDynamoDBClient client = new AmazonDynamoDBClient();
-        DynamoDB dynamoDB = new DynamoDB(client);
-        Table contentTable = dynamoDB.getTable("Content");
-        
         // Create operation
         if (request.operation.equals("create")) {
         
@@ -67,7 +64,7 @@ public class ContentRequestHandler implements RequestHandler<ContentRequest, Con
             } else if (request.item.name != null && !request.item.name.isEmpty()) {
             	// Return a list of contents with the given name
                 ScanRequest scanRequest = new ScanRequest().withTableName(Constants.CONTENT_TABLE_NAME);
-                ScanResult allItems = client.scan(scanRequest);
+                ScanResult allItems = DBManager.client.scan(scanRequest);
                 for (Map<String, AttributeValue> item : allItems.getItems()){
                     if (item.get(Constants.CONTENT_NAME_KEY) != null && item.get(Constants.CONTENT_NAME_KEY).getS().equals(request.item.name)) {
                         Item comment = contentTable.getItem(Constants.CONTENT_ID_KEY, item.get(Constants.CONTENT_ID_KEY).getS());
@@ -81,7 +78,7 @@ public class ContentRequestHandler implements RequestHandler<ContentRequest, Con
             	ScanRequest scanRequest = new ScanRequest()
             			.withTableName(Constants.CONTENT_TABLE_NAME)
             			.withLimit(Constants.SAMPLE_SIZE);
-            	ScanResult sampleItems = client.scan(scanRequest);
+            	ScanResult sampleItems = DBManager.client.scan(scanRequest);
             	
             	// TODO: clean up this code (lots of overlapping with queryResponse)
                 ContentResponse resp = new ContentResponse("Success");

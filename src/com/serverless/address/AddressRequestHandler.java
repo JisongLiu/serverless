@@ -18,12 +18,11 @@ import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.serverless.Constants;
+import com.serverless.DBManager;
 
 public class AddressRequestHandler implements RequestHandler<AddressRequest, AddressResponse> {
-
-    private AmazonDynamoDBClient client = new AmazonDynamoDBClient();
-    private DynamoDB dynamoDB = new DynamoDB(client);
-    private Table addressTable = dynamoDB.getTable("Address");
+	
+	private Table addressTable = DBManager.getTable(Constants.ADDRESS_TABLE_NAME);
     
     @Override
     public AddressResponse handleRequest(AddressRequest request, Context context) {
@@ -90,7 +89,7 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
         	ScanRequest scanRequest = new ScanRequest()
         			.withTableName(Constants.ADDRESS_TABLE_NAME)
         			.withLimit(Constants.SAMPLE_SIZE);
-        	ScanResult sampleItems = client.scan(scanRequest);
+        	ScanResult sampleItems = DBManager.client.scan(scanRequest);
         	
             AddressResponse resp = new AddressResponse("Success");
             for (Map<String, AttributeValue> mapEntry : sampleItems.getItems()) {

@@ -19,15 +19,14 @@ import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.serverless.Constants;
+import com.serverless.DBManager;
 
 public class CustomerRequestHandler implements RequestHandler<CustomerRequest, CustomerResponse> {	
     private Validator validator;
     private Validator.EmailValidator emailValidator;
     private Validator.PhonenumberValidator phonenumberValidator;
 
-    private AmazonDynamoDBClient client = new AmazonDynamoDBClient();
-    private DynamoDB dynamoDB = new DynamoDB(client);
-    private Table customerTable = dynamoDB.getTable("Customer");
+    private Table customerTable = DBManager.getTable(Constants.CUSTOMER_TABLE_NAME);
     
     public CustomerRequestHandler() {
         validator = new Validator();
@@ -100,7 +99,7 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         } else if (c.address_ref != null && !c.address_ref.isEmpty()) {
             // Return a list of customers with the given address
             ScanRequest scanRequest = new ScanRequest().withTableName(Constants.CUSTOMER_TABLE_NAME);
-            ScanResult allItems = client.scan(scanRequest);
+            ScanResult allItems = DBManager.client.scan(scanRequest);
             for (Map<String, AttributeValue> item : allItems.getItems()){
                 if (item.get(Constants.CUSTOMER_ADDRESS_KEY) != null && item.get(Constants.CUSTOMER_ADDRESS_KEY).getS().equals(c.address_ref)) {
                     Item customer = customerTable.getItem(Constants.CUSTOMER_EMAIL_KEY, item.get(Constants.CUSTOMER_EMAIL_KEY).getS());
@@ -114,7 +113,7 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         	ScanRequest scanRequest = new ScanRequest()
         			.withTableName(Constants.CUSTOMER_TABLE_NAME)
         			.withLimit(Constants.SAMPLE_SIZE);
-        	ScanResult sampleItems = client.scan(scanRequest);
+        	ScanResult sampleItems = DBManager.client.scan(scanRequest);
         	
             CustomerResponse resp = new CustomerResponse("Success");
             for (Map<String, AttributeValue> mapEntry : sampleItems.getItems()) {
