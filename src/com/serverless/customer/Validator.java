@@ -43,4 +43,12 @@ public class Validator {
 			super.pattern = Pattern.compile(PHONENUMBER_PATTERN);
 		}
 	}
+	
+	class NameValidator extends AbstractValidator {
+		private static final String NAME_PATTERN = "[a-zA-Z]+";
+		
+		public NameValidator() {
+			super.pattern = Pattern.compile(NAME_PATTERN);
+		}
+	}
 }

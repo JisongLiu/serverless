@@ -25,6 +25,7 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
     private Validator validator;
     private Validator.EmailValidator emailValidator;
     private Validator.PhonenumberValidator phonenumberValidator;
+    private Validator.NameValidator nameValidator;
 
     private Table customerTable = DBManager.getTable(Constants.CUSTOMER_TABLE_NAME);
     
@@ -32,6 +33,7 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
         validator = new Validator();
         emailValidator = validator.new EmailValidator();
         phonenumberValidator = validator.new PhonenumberValidator();
+        nameValidator = validator.new NameValidator();
     }
     
     @Override
@@ -64,6 +66,18 @@ public class CustomerRequestHandler implements RequestHandler<CustomerRequest, C
             if (!phonenumberValidator.validate(c.phonenumber)) {
                 throw new IllegalArgumentException("400 Bad Request -- invalid phone number format");
             }
+        }
+        
+        // Validate name format
+        if (c.firstname != null && !c.firstname.isEmpty()) {
+        	if (!nameValidator.validate(c.firstname)) {
+        		throw new IllegalArgumentException("400 Bad Request -- invalid name format");
+        	}
+        }
+        if (c.lastname != null && !c.lastname.isEmpty()) {
+        	if (!nameValidator.validate(c.lastname)) {
+        		throw new IllegalArgumentException("400 Bad Request -- invalid name format");
+        	}
         }
         
         // Check existence and write item to the table 
