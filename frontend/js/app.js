@@ -250,14 +250,65 @@ app.controller('CustomerListController', function CustomerListController($scope,
             });
         }
     };
-}).controller('LoginPageController', function($scope) {
-    
+}).controller('LoginPageController', function($scope, $cookies) {
 }).controller('ContentBrowserController', function($scope) {
-    $scope.content = [
-        {
-            name: 'Game of Thrones',
-            type: 'franchise',
-            series: []
-        }
-    ];
+    $scope.content = [{
+        name: 'Game of Thrones',
+        type: 'franchise',
+        series: [{
+            name: 'Season 1',
+            type: 'series',
+            episodes: [{
+                name: 'Winter is Coming',
+                type: 'episode'
+            }, {
+                name: 'The Kingsroad',
+                type: 'episode'
+            }, {
+                name: 'Lord Snow',
+                type: 'episode'
+            }, {
+                name: 'Cripples, Bastards, and Broken Things',
+                type: 'episode'
+            }, {
+                name: 'The Wolf and the Lion',
+                type: 'episode'
+            }]
+        }, {
+            name: 'Season 2',
+            type: 'series',
+            episodes: [{
+                name: 'The North Remembers',
+                type: 'episode'
+            }, {
+                name: 'The Night Lands',
+                type: 'episode'
+            }, {
+                name: 'What Is Dead May Never Die',
+                type: 'episode'
+            }, {
+                name: 'Garden of Bones',
+                type: 'episode'
+            }, {
+                name: 'The Ghost of Harrenhal',
+                type: 'episode'
+            }]
+        }]
+    }, {
+        name: 'Breaking Bad',
+        type: 'franchise',
+        series: [{
+            name: 'Season 1'
+        }, {
+            name: 'Season 2'
+        }]
+    }];
+
+    $scope.$on('$viewContentLoaded', function() {
+        $(document).ready(function() {
+            console.log('accordion started');
+            $('.ui.accordion').accordion();
+        });
+    });
+
 });
