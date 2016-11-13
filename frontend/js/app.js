@@ -4,6 +4,11 @@ app.config(function($stateProvider, $httpProvider) {
     delete $httpProvider.defaults.headers.common['X-Requested-With'];
 
     $stateProvider.state({
+        name: 'login',
+        url: '/login',
+        templateUrl: 'partials/login.html',
+        controller: 'LoginPageController'
+    }).state({
         name: 'customerList',
         url:'/customers',
         templateUrl:'partials/customer-list.html',
@@ -23,9 +28,14 @@ app.config(function($stateProvider, $httpProvider) {
         url:'/addresses',
         templateUrl: 'partials/address-list.html',
         controller: 'AddressListController'
+    }).state({
+        name: 'contentBrowser',
+        url:'/content',
+        templateUrl: 'partials/content-browser.html',
+        controller: 'ContentBrowserController'
     });
 }).run(function($state) {
-    $state.go('customerList');
+    $state.go('login');
 });
 
 app.factory('Customers', function($resource) {
@@ -230,8 +240,6 @@ app.controller('CustomerListController', function CustomerListController($scope,
             console.log(customerData);
             Customers.create(customerData, function() { $state.go('customerList'); });
         }
-
-
     };
 }).controller('AddressListController', function($scope, Address) {
     $scope.addresses = Address.get();
@@ -242,4 +250,14 @@ app.controller('CustomerListController', function CustomerListController($scope,
             });
         }
     };
+}).controller('LoginPageController', function($scope) {
+    
+}).controller('ContentBrowserController', function($scope) {
+    $scope.content = [
+        {
+            name: 'Game of Thrones',
+            type: 'franchise',
+            series: []
+        }
+    ];
 });
