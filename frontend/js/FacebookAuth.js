@@ -1,7 +1,5 @@
 // This is called with the results from from FB.getLoginStatus().
 function statusChangeCallback(response) {
-	console.log('statusChangeCallback');
-	console.log(response);
 	// The response object is returned with a status field that lets the
 	// app know the current login status of the person.
 	// Full docs on the response object can be found in the documentation
@@ -73,11 +71,15 @@ window.fbAsyncInit = function() {
 // Here we run a very simple test of the Graph API after login is
 // successful.  See statusChangeCallback() for when this call is made.
 function testAPI() {
-	console.log('Welcome!  Fetching your information.... ');
-	FB.api('/me', function(response) {
-		console.log('Successful login for: ' + response.name);
-	});
+	FB.api('/me', { fields: 'first_name, last_name, email' }, 
+         function(response) {
+		         console.log('Successful login for: ' + response.email);
+             sessionStorage.first_name = response.first_name;
+             sessionStorage.last_name = response.last_name;
+             sessionStorage.email = response.email;
+	       });
 }
+
 // Only works after `FB.init` is called
 function myFacebookLogin() {
 	FB.login(function(response){

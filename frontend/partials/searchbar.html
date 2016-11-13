@@ -5,7 +5,10 @@
   </div>
   <script src = "js/FacebookAuth.js"> </script>    
   <div class="right menu">
-    <a ui-sref="editCustomer()" class="ui item">
+    <a ui-sref="contentBrowser" class="ui item">
+      Browse
+    </a>
+    <a ui-sref="editCustomer({email: current_user.email})" class="ui item">
       Settings
     </a>
     <a class="ui item" onclick="myFacebookLogout();">

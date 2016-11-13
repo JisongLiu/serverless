@@ -250,8 +250,16 @@ app.controller('CustomerListController', function CustomerListController($scope,
             });
         }
     };
-}).controller('LoginPageController', function($scope, $cookies) {
+}).controller('LoginPageController', function($scope) {
+    
 }).controller('ContentBrowserController', function($scope) {
+    console.log('loading content for user ' + sessionStorage.email);
+    $scope.current_user = {
+        first_name: sessionStorage.first_name,
+        last_name:  sessionStorage.last_name,
+        email: sessionStorage.email
+    };
+
     $scope.content = [{
         name: 'Game of Thrones',
         type: 'franchise',
