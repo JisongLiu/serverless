@@ -57,7 +57,7 @@ public class AddressRequestHandler implements RequestHandler<AddressRequest, Add
     	addr.line1   = result[2];
     	addr.city    = result[1];
     	addr.state   = result[3];
-    	addr.zipcode = result[3];
+    	addr.zipcode = result[4];
     	
     	
     	// Validate id field not null
