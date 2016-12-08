@@ -20,12 +20,20 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
 		  @LambdaFunction(functionName="CustomerRequestHandler")
 		  CustomerResponse CustomerRequestHandler(CustomerRequest input);
 		}
+	public interface ContentService {
+		  @LambdaFunction(functionName="ContentRequestHandler")
+		  ContentResponse ContentRequestHandler(ContentRequest input);
+		}
+	public interface CommentService {
+		  @LambdaFunction(functionName="CommentRequestHandler")
+		  CommentResponse CommentRequestHandler(CommentRequest input);
+		}
 	
     @Override
     public Object handleRequest(CompositeRequest request, Context context) {
     
         if (request.object.equals("address")) {
-        	System.out.println("hello");
+        	//System.out.println("hello");
         	AWSLambdaClient lambda = new AWSLambdaClient();
         	lambda.configureRegion(Regions.US_EAST_1);
         	AddressService service = LambdaInvokerFactory.build(AddressService.class, lambda);
@@ -37,7 +45,7 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
         	return res;
         	
         } else if (request.object.equals("customer")) {
-        	System.out.println("hello2");
+        	//System.out.println("hello2");
         	AWSLambdaClient lambda = new AWSLambdaClient();
         	lambda.configureRegion(Regions.US_EAST_1);
         	CustomerService service = LambdaInvokerFactory.build(CustomerService.class, lambda);
@@ -49,7 +57,37 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
         	return res;
 
 
-        }
+        } else if (request.object.equals("content")) {
+        	//System.out.println("hello2");
+        	AWSLambdaClient lambda = new AWSLambdaClient();
+        	lambda.configureRegion(Regions.US_EAST_1);
+        	ContentService service = LambdaInvokerFactory.build(ContentService.class, lambda);
+        	ContentRequest req = new ContentRequest();
+        	req.setOperation(request.getOperation());
+        	if(request.content==null){
+        		req.setItem(new Content());
+        	} else{
+        		req.setItem(request.getContent());
+        	}
+        	ContentResponse res = service.ContentRequestHandler(req);
+
+        	return res;
+
+
+        } else if (request.object.equals("comment")) {
+        	//System.out.println("hello2");
+        	AWSLambdaClient lambda = new AWSLambdaClient();
+        	lambda.configureRegion(Regions.US_EAST_1);
+        	CommentService service = LambdaInvokerFactory.build(CommentService.class, lambda);
+        	CommentRequest req = new CommentRequest();
+        	req.setOperation(request.getOperation());
+        	req.setItem(request.getComment());
+        	CommentResponse res = service.CommentRequestHandler(req);
+
+        	return res;
+
+
+        } 
         return null;
     }
 

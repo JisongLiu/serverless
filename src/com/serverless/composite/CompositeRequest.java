@@ -5,6 +5,8 @@ public class CompositeRequest {
 	public String operation;
 	public Address address;
 	public Customer customer;
+	public Content content;
+	public Comment comment;
     
     public String getOperation(){
     	return operation;
@@ -35,6 +37,22 @@ public class CompositeRequest {
     
     public void setObject(String object){
     	this.object = object;
+    }
+    
+    public Comment getComment(){
+    	return comment;
+    }
+    
+    public void setComment(Comment comment){
+    	this.comment = comment;
+    }
+    
+    public Content getContent(){
+    	return content;
+    }
+    
+    public void setContent(Content content){
+    	this.content = content;
     }
 
     public CompositeRequest() {
