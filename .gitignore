@@ -8,6 +8,9 @@ tmp/
 local.properties
 .loadpath
 .recommenders
+*~
+data/*.json
+.DS_Store
 
 # Eclipse Core
 .project
