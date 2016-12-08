@@ -2,7 +2,26 @@ package com.serverless.composite;
 
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.serverless.Constants;
+import com.serverless.DBManager;
+import com.serverless.content.Content;
+import com.serverless.content.ContentRequest;
+import com.serverless.content.ContentResponse;
+import com.serverless.content.Episode;
+import com.serverless.content.Franchise;
+import com.serverless.content.Property;
+import com.serverless.content.Series;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.lambda.AWSLambdaClient;
 import com.amazonaws.services.lambda.invoke.LambdaFunction;
 import com.amazonaws.services.lambda.invoke.LambdaInvokerFactory;
@@ -43,7 +62,6 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
         	AddressResponse res = service.AddressRequestHandler(req);
 
         	return res;
-        	
         } else if (request.object.equals("customer")) {
         	//System.out.println("hello2");
         	AWSLambdaClient lambda = new AWSLambdaClient();
@@ -55,25 +73,15 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
         	CustomerResponse res = service.CustomerRequestHandler(req);
 
         	return res;
-
-
         } else if (request.object.equals("content")) {
-        	//System.out.println("hello2");
-        	AWSLambdaClient lambda = new AWSLambdaClient();
-        	lambda.configureRegion(Regions.US_EAST_1);
-        	ContentService service = LambdaInvokerFactory.build(ContentService.class, lambda);
-        	ContentRequest req = new ContentRequest();
-        	req.setOperation(request.getOperation());
-        	if(request.content==null){
-        		req.setItem(new Content());
-        	} else{
-        		req.setItem(request.getContent());
-        	}
-        	ContentResponse res = service.ContentRequestHandler(req);
+        	String email = request.customer.email;
+        	
+        	List<Franchise> items = getRecommendation(email);
+        	RecommendationResponse resp = new RecommendationResponse();
+        	resp.setMessage("success");
+        	resp.setItems(items);
 
-        	return res;
-
-
+        	return resp;
         } else if (request.object.equals("comment")) {
         	//System.out.println("hello2");
         	AWSLambdaClient lambda = new AWSLambdaClient();
@@ -85,10 +93,72 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
         	CommentResponse res = service.CommentRequestHandler(req);
 
         	return res;
-
-
-        } 
+        }
+        
         return null;
+    }
+    
+    public List<Franchise> getRecommendation(String email) {
+    	ScanRequest scanRequest = new ScanRequest()
+    			.withTableName(Constants.CONTENT_TABLE_NAME);
+    	ScanResult sampleItems = DBManager.client.scan(scanRequest);
+    	
+        HashMap<String, Content> contentTable = new HashMap<>();
+        HashSet<Content> franchises = new HashSet<>();
+        for (Map<String, AttributeValue> mapEntry : sampleItems.getItems()) {
+            Content c = new Content();
+            c.id     = mapEntry.get(Constants.CONTENT_ID_KEY).getS();
+            c.name   = mapEntry.get(Constants.CONTENT_NAME_KEY).getS();
+            c.type   = mapEntry.get(Constants.CONTENT_TYPE_KEY).getS();
+            c.franchises = mapEntry.get(Constants.CONTENT_FRANCHISES_KEY) == null ? 
+            		null : mapEntry.get(Constants.CONTENT_FRANCHISES_KEY).getSS();
+            c.series = mapEntry.get(Constants.CONTENT_SERIES_KEY) == null ? 
+            		null : mapEntry.get(Constants.CONTENT_SERIES_KEY).getSS();
+            c.episodes = mapEntry.get(Constants.CONTENT_EPISODES_KEY) == null ?
+            		null : mapEntry.get(Constants.CONTENT_EPISODES_KEY).getSS();
+            contentTable.put(c.id, c);
+            
+            if (c.type.equals("franchise")) {
+            	franchises.add(c);
+            }
+        }
+        
+        List<Franchise> recommendations = new ArrayList<>();
+        for (Content cf : franchises) {
+        	Franchise f = new Franchise();
+        	f.id = cf.id;
+        	f.name = cf.name;
+        	f.type = cf.type;
+        	if (cf.series == null)
+        		continue;
+
+        	List<Series> series = new ArrayList<>();
+        	for (String sid : cf.series) {
+        		Content cs = contentTable.get(sid);
+        		Series s = new Series();
+        		s.id = cs.id;
+        		s.name = cs.name;
+        		s.type = cs.type;
+        		
+        		if (cs.episodes == null)
+        			continue;
+        		
+        		List<Episode> episodes = new ArrayList<>();
+        		for (String eid : cs.episodes) {
+        			Content ce = contentTable.get(eid);
+        			Episode e = new Episode();
+        			e.id = ce.id;
+        			e.name = ce.name;
+        			e.type = ce.type;
+        			episodes.add(e);
+        		}
+        		series.add(s);
+        	}
+        	f.series = series;
+            recommendations.add(f);
+        }
+        
+        return recommendations;
     }
 
 }

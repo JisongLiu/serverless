@@ -10,59 +10,24 @@ public class Content {
 	public List<String> series;
 	public List<String> episodes;
 
-	public String getId() {
-		return id;
-	}
+	public String getId() { return id; }
+	public void setId(String id) { this.id = id; }
 
-	public void setId(String id) {
-		this.id = id;
-	}
+	public String getName() { return name; }
+	public void setName(String name) { this.name = name; }
 
-	public String getName() {
-		return name;
-	}
+	public String getType() { return type; }
+	public void setType(String type) { this.type = type; }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+	public List<String> getFranchises() { return franchises; }
+	public void setFranchises(List<String> franchises) { this.franchises = franchises; }
 
-	public String getType() {
-		return type;
-	}
+	public List<String> getSeries() { return series; }
+	public void setSeries(List<String> series) { this.series = series; }
 
-	public void setType(String type) {
-		this.type = type;
-	}
+	public List<String> getEpisodes() { return episodes; }
+	public void setEpisodes(List<String> episodes) { this.episodes = episodes; }
 
-	public List<String> getFranchises() {
-		return franchises;
-	}
-
-	public void setFranchises(List<String> franchises) {
-		this.franchises = franchises;
-	}
-
-	public List<String> getSeries() {
-		return series;
-	}
-
-	public void setSeries(List<String> series) {
-		this.series = series;
-	}
-
-	public List<String> getEpisodes() {
-		return episodes;
-	}
-
-	public void setEpisodes(List<String> episodes) {
-		this.episodes = episodes;
-	}
-
-	public Content(String id) {
-		this.id = id;
-	}
-
-	public Content() {
-
-	}
+	public Content(String id) { this.id = id; }
+	public Content() {}
 }
