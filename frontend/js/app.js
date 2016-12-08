@@ -61,6 +61,8 @@ app.factory('Customers', function($resource) {
             method: 'PUT'
         }
     });
+}).factory('Recommendation', function($resource) {
+    return $resource('https://k58s2zp6g8.execute-api.us-east-1.amazonaws.com/beta/composite/:email/content', {});
 });
 
 app.service('popupService', function($window) {
@@ -252,7 +254,7 @@ app.controller('CustomerListController', function CustomerListController($scope,
     };
 }).controller('LoginPageController', function($scope) {
     
-}).controller('ContentBrowserController', function($scope) {
+}).controller('ContentBrowserController', function($scope, Recommendation) {
     console.log('loading content for user ' + sessionStorage.email);
     $scope.current_user = {
         first_name: sessionStorage.first_name,
@@ -260,57 +262,9 @@ app.controller('CustomerListController', function CustomerListController($scope,
         email: sessionStorage.email
     };
 
-    $scope.content = [{
-        name: 'Game of Thrones',
-        type: 'franchise',
-        series: [{
-            name: 'Season 1',
-            type: 'series',
-            episodes: [{
-                name: 'Winter is Coming',
-                type: 'episode'
-            }, {
-                name: 'The Kingsroad',
-                type: 'episode'
-            }, {
-                name: 'Lord Snow',
-                type: 'episode'
-            }, {
-                name: 'Cripples, Bastards, and Broken Things',
-                type: 'episode'
-            }, {
-                name: 'The Wolf and the Lion',
-                type: 'episode'
-            }]
-        }, {
-            name: 'Season 2',
-            type: 'series',
-            episodes: [{
-                name: 'The North Remembers',
-                type: 'episode'
-            }, {
-                name: 'The Night Lands',
-                type: 'episode'
-            }, {
-                name: 'What Is Dead May Never Die',
-                type: 'episode'
-            }, {
-                name: 'Garden of Bones',
-                type: 'episode'
-            }, {
-                name: 'The Ghost of Harrenhal',
-                type: 'episode'
-            }]
-        }]
-    }, {
-        name: 'Breaking Bad',
-        type: 'franchise',
-        series: [{
-            name: 'Season 1'
-        }, {
-            name: 'Season 2'
-        }]
-    }];
+    Recommendation.get({ email: $scope.current_user.email }, function(recs) {
+        $scope.content = recs.items;
+    });
 
     $scope.$on('$viewContentLoaded', function() {
         $(document).ready(function() {

@@ -1,5 +1,9 @@
 <div class="ui text container">
   <div ng-include="'partials/searchbar.html'"></div>
+  <div class="ui header">
+    <h1 class="center">Hi {{ current_user.first_name }}!</h1>
+  </div>
+
   <div class="ui accordion">
     <div ng-repeat="franchise in content">
     <div class="title">

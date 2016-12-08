@@ -1,6 +1,7 @@
 package com.serverless.content;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,12 +74,12 @@ public class ContentRequestHandler implements RequestHandler<ContentRequest, Con
                 }
                 return queryResponse(scanResult);
             
-            // return 10 random items
+            // return all items
             } else {
             	ScanRequest scanRequest = new ScanRequest()
-            			.withTableName(Constants.CONTENT_TABLE_NAME)
-            			.withLimit(Constants.SAMPLE_SIZE);
+            			.withTableName(Constants.CONTENT_TABLE_NAME);
             	ScanResult sampleItems = DBManager.client.scan(scanRequest);
+            	
             	
             	// TODO: clean up this code (lots of overlapping with queryResponse)
                 ContentResponse resp = new ContentResponse("Success");
@@ -89,12 +90,9 @@ public class ContentRequestHandler implements RequestHandler<ContentRequest, Con
                     		null : mapEntry.get(Constants.CONTENT_NAME_KEY).getS();
                     respItem.type    = mapEntry.get(Constants.CONTENT_TYPE_KEY) == null ? 
                     		null : mapEntry.get(Constants.CONTENT_TYPE_KEY).getS();
-                    respItem.franchises = mapEntry.get(Constants.CONTENT_FRANCHISES_KEY) == null ? 
-                    		null : mapEntry.get(Constants.CONTENT_FRANCHISES_KEY).getSS();
-                    respItem.series = mapEntry.get(Constants.CONTENT_SERIES_KEY) == null ? 
-                    		null : mapEntry.get(Constants.CONTENT_SERIES_KEY).getSS();
-                    respItem.episodes = mapEntry.get(Constants.CONTENT_EPISODES_KEY) == null ?
-                    		null : mapEntry.get(Constants.CONTENT_EPISODES_KEY).getSS();
+                    respItem.franchises = ContentRequestHandler.getStringList(mapEntry, Constants.CONTENT_FRANCHISES_KEY);
+                    respItem.series = ContentRequestHandler.getStringList(mapEntry, Constants.CONTENT_SERIES_KEY);
+                    respItem.episodes = ContentRequestHandler.getStringList(mapEntry, Constants.CONTENT_EPISODES_KEY);
                     resp.addItem(respItem);
                 }
                 
@@ -195,4 +193,17 @@ public class ContentRequestHandler implements RequestHandler<ContentRequest, Con
         return resp;
     }
 
+    public static List<String> getStringList(Map<String, AttributeValue> entry, String key) {
+    	if (entry.get(key) == null)
+    		return null;
+    	
+    	List<String> arr = new ArrayList<>();
+        List<AttributeValue> valList = entry.get(key).getL();
+        for (AttributeValue val : valList) {
+        	arr.add(val.getS());
+        }
+        
+        return arr;
+    }
+    
 }

@@ -1,16 +1,25 @@
 package com.serverless.composite;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.serverless.Constants;
 import com.serverless.DBManager;
+import com.serverless.address.AddressRequest;
+import com.serverless.address.AddressResponse;
+import com.serverless.comment.CommentRequest;
+import com.serverless.comment.CommentResponse;
 import com.serverless.content.Content;
 import com.serverless.content.ContentRequest;
+import com.serverless.content.ContentRequestHandler;
 import com.serverless.content.ContentResponse;
 import com.serverless.content.Episode;
 import com.serverless.content.Franchise;
 import com.serverless.content.Property;
 import com.serverless.content.Series;
+import com.serverless.customer.CustomerRequest;
+import com.serverless.customer.CustomerResponse;
+import com.sun.istack.internal.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -110,12 +119,9 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
             c.id     = mapEntry.get(Constants.CONTENT_ID_KEY).getS();
             c.name   = mapEntry.get(Constants.CONTENT_NAME_KEY).getS();
             c.type   = mapEntry.get(Constants.CONTENT_TYPE_KEY).getS();
-            c.franchises = mapEntry.get(Constants.CONTENT_FRANCHISES_KEY) == null ? 
-            		null : mapEntry.get(Constants.CONTENT_FRANCHISES_KEY).getSS();
-            c.series = mapEntry.get(Constants.CONTENT_SERIES_KEY) == null ? 
-            		null : mapEntry.get(Constants.CONTENT_SERIES_KEY).getSS();
-            c.episodes = mapEntry.get(Constants.CONTENT_EPISODES_KEY) == null ?
-            		null : mapEntry.get(Constants.CONTENT_EPISODES_KEY).getSS();
+            c.franchises = ContentRequestHandler.getStringList(mapEntry, Constants.CONTENT_FRANCHISES_KEY);
+            c.series = ContentRequestHandler.getStringList(mapEntry, Constants.CONTENT_SERIES_KEY);
+            c.episodes = ContentRequestHandler.getStringList(mapEntry, Constants.CONTENT_EPISODES_KEY);
             contentTable.put(c.id, c);
             
             if (c.type.equals("franchise")) {
@@ -123,14 +129,17 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
             }
         }
         
+        System.out.println(contentTable.size());
+        
         List<Franchise> recommendations = new ArrayList<>();
         for (Content cf : franchises) {
         	Franchise f = new Franchise();
         	f.id = cf.id;
         	f.name = cf.name;
         	f.type = cf.type;
-        	if (cf.series == null)
+        	if (cf.series == null) {
         		continue;
+        	}
 
         	List<Series> series = new ArrayList<>();
         	for (String sid : cf.series) {
@@ -140,8 +149,10 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
         		s.name = cs.name;
         		s.type = cs.type;
         		
-        		if (cs.episodes == null)
+        		if (cs.episodes == null) {
+            		System.out.println(cs.name + " has no episodes");
         			continue;
+        		}
         		
         		List<Episode> episodes = new ArrayList<>();
         		for (String eid : cs.episodes) {
@@ -152,12 +163,14 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
         			e.type = ce.type;
         			episodes.add(e);
         		}
+        		s.episodes = episodes;
         		series.add(s);
         	}
         	f.series = series;
             recommendations.add(f);
         }
         
+        System.out.println("recommendations.size() = " + recommendations.size());
         return recommendations;
     }
 

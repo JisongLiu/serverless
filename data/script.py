@@ -29,15 +29,15 @@ if __name__ == "__main__":
             content.append(e)
             episodes.append({"S":e["id"]["S"]})
         count += 1
-    content.append({"id":{"S":str(base+count)}, "type":{"S":"franchise"}, "name":{"S":sys.argv[3]}, "series":{"L":seasons}})
+    content.append({"id":{"S":str(base+count)}, "type":{"S":"franchise"}, "name":{"S":franchise_name}, "series":{"L":seasons}})
 
-    requests = []
+    Requests = []
     for c in content:
         req = {"PutRequest":{"Item":c}}
         requests.append(req)
 
     i = 0
-    while i * 25 < len(requests):
+    while i * WRITE_LIMIT < len(requests):
         fname = prefix + str(i) + ".json"
         out = open(fname, "w")
         out.write(json.dumps({"Content":requests[i*25:min(len(requests),i*25+25)]}))

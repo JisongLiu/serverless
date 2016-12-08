@@ -1,5 +1,9 @@
 package com.serverless.composite;
 
+import com.serverless.address.Address;
+import com.serverless.comment.Comment;
+import com.serverless.customer.Customer;
+
 public class CompositeRequest {
 	public String object;
 	public String operation;
