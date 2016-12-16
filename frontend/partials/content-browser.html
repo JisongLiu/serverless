@@ -14,7 +14,7 @@
       <div class="transition hidden" ng-repeat="series in franchise.series">
         <h3 class="ui header">{{ series.name }}</h4>
         <div ng-repeat="episode in series.episodes">
-          <p>{{ episode.name }}</p>
+          <p><a href="#/content/{{ episode.id }}">{{ episode.name }}</a></p>
         </div>
         <br>
       </div>

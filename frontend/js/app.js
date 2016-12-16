@@ -33,6 +33,11 @@ app.config(function($stateProvider, $httpProvider) {
         url:'/content',
         templateUrl: 'partials/content-browser.html',
         controller: 'ContentBrowserController'
+    }).state({
+        name: 'contentPage',
+        url: '/content/:id',
+        templateUrl: 'partials/content-page.html',
+        controller: 'ContentPageController'
     });
 }).run(function($state) {
     $state.go('login');
@@ -46,6 +51,16 @@ app.factory('Customers', function($resource) {
     });
 }).factory('Customer', function($resource) {
     return $resource('https://k58s2zp6g8.execute-api.us-east-1.amazonaws.com/beta/customers/:email', {}, {
+        get: {
+            method: 'GET',
+            interceptor: {
+                response: function(response) {
+                    var result = response.resource;
+                    result.$status = response.status;
+                    return result;
+                }
+            }
+        },
         update: {
             method: 'PUT'
         }
@@ -69,6 +84,10 @@ app.service('popupService', function($window) {
     this.showPopup = function(message) {
         return $window.confirm(message);
     }
+}).factory('Content', function($resource) {
+    return $resource('https://k58s2zp6g8.execute-api.us-east-1.amazonaws.com/beta/contents/:id', {});
+}).factory('Comment', function($resource) {
+    return $resource('https://k58s2zp6g8.execute-api.us-east-1.amazonaws.com/beta/comments/:id', {});
 });
 
 function startSmartyStreets($scope) {
@@ -254,7 +273,15 @@ app.controller('CustomerListController', function CustomerListController($scope,
     };
 }).controller('LoginPageController', function($scope) {
     
-}).controller('ContentBrowserController', function($scope, Recommendation) {
+}).controller('ContentBrowserController', function($scope, Customer, Recommendation) {
+    Customer.get({
+        email: sessionStorage.email
+    }, function(response) {
+        console.log(response);
+    }, function(response) {
+        console.log(response);
+    });
+
     console.log('loading content for user ' + sessionStorage.email);
     $scope.current_user = {
         first_name: sessionStorage.first_name,
@@ -273,4 +300,8 @@ app.controller('CustomerListController', function CustomerListController($scope,
         });
     });
 
+}).controller('ContentPageController', function($scope, $stateParams, Content, Comment) {
+    Content.get({id: $stateParams.id}, function(c) {
+        $scope.title = c.items[0].name;
+    });
 });
