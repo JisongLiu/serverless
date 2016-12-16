@@ -3,4 +3,23 @@
   <div class="ui header">
     <h1 class="center">{{ title }}</h1>
   </div>
+
+  <div class="ui dividing header">
+    <h2 class="center">Comments</h2>
+  </div>
+
+  <div ng-repeat="comment in comments">      
+    <div class="ui stackable text container">
+      <h4 class="ui blue header">{{ customers[comment.user].firstname }} {{ customers[comment.user].lastname }}</h4>
+      <p>{{ comment.comment }}</p>
+    </div>
+    <div class="ui hidden divider"></div>
+  </div>
+
+  <form name="commentForm" class="ui form" ng-submit="submitComment()">
+    <div class="field">
+      <textarea id="comment-text" name="comment-text" placeholder="Add your comment"></textarea>
+      <br />
+    <button class="ui fluid button" type="submit">Submit</button>
+  </form>
 </div>

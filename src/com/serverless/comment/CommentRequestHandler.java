@@ -87,6 +87,19 @@ public class CommentRequestHandler implements RequestHandler<CommentRequest, Com
             }
             return queryResponse(scanResult);
         
+        // Look up by content
+        } else if (c.content != null && !c.content.isEmpty()) {
+        	// Return a list of comments for the given content id
+            ScanRequest scanRequest = new ScanRequest().withTableName(Constants.COMMENT_TABLE_NAME);
+            ScanResult allItems = DBManager.client.scan(scanRequest);
+            for (Map<String, AttributeValue> item : allItems.getItems()){
+                if (item.get(Constants.COMMENT_CONTENT_KEY) != null && item.get(Constants.COMMENT_CONTENT_KEY).getS().equals(c.content)) {
+                    Item comment = commentTable.getItem(Constants.COMMENT_ID_KEY, item.get(Constants.COMMENT_ID_KEY).getS());
+                    scanResult.add(comment);
+                }
+            }
+            return queryResponse(scanResult);
+
         // return 10 random items
         } else {
         	ScanRequest scanRequest = new ScanRequest()

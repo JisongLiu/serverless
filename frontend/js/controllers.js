@@ -33,6 +33,14 @@ function validateAddress($scope, callback) {
     });
 };
 
+// Returns a random integer between min (included) and max (excluded)
+// Using Math.round() will give you a non-uniform distribution!
+function getRandomInt(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
 var graphURI = "http://serverlessApp:w225WDsgJXte0iVVdhNa@hobby-benonmpgjildgbkeccapglol.dbs.graphenedb.com:24789/db/data/transaction/commit";
 
 app.controller('CustomerListController', function CustomerListController($scope, $window, $state, popupService, Customer) {
@@ -210,23 +218,46 @@ app.controller('CustomerListController', function CustomerListController($scope,
         });
     });
 
-}).controller('ContentPageController', function($scope, $stateParams, $http, Content) {
+}).controller('ContentPageController', function($scope, $stateParams, $state, Content, Comment, Customer, popupService) {
+    $scope.current_user = {
+        first_name: sessionStorage.first_name,
+        last_name:  sessionStorage.last_name,
+        email: sessionStorage.email
+    };
+
     var cid = $stateParams.id; // content id
 
     Content.get({id: cid}, function(c) {
         $scope.title = c.items[0].name;
     });
 
-    $http.post(graphURI, {
-        statements: [{
-            statement: "MATCH (cm:Comment)-[r:comment_on]-(ct:Content) WHERE ct.id = {id}",
-            parameters: {
-                "id": { "name": cid }
-            }
-        }]
-    }).success(function(data) {
-        console.log(data);
-    }).error(function(response) {
+    $scope.customers = {};
+    Comment.get({content:cid}, function(response) {
+        $scope.comments = response.items;
+        for (var i = 0; i < $scope.comments.length; i++) {
+            Customer.get({ email: $scope.comments[i].user }, function(c) {
+                $scope.customers[c.items[0].email] = c.items[0];
+            });
+        }
+    }, function(response) {
         console.log(response);
     });
+
+    $scope.submitComment = function() {
+        console.log("adding comment");
+        var text = $("#comment-text").val();
+        if (text) {
+            var commentObj = {
+                "id": getRandomInt(1000, 2147483647),
+                "comment": text,
+                "content": cid,
+                "user": $scope.current_user.email
+            };
+            console.log(commentObj);
+            Comment.create(commentObj);
+            $state.reload();
+        } else {
+            popupService.showPopup("empty comments are not allowed");
+        }
+    };
 });

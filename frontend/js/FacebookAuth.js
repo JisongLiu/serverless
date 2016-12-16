@@ -8,7 +8,8 @@ function statusChangeCallback(response) {
 		// Logged into your app and Facebook.
 		testAPI();
 		setTimeout(function () {
-			window.location.href = "#/content"; //will redirect to your blog page (an ex: blog.html)
+        if (window.location.href.endsWith("login"))
+			      window.location.href = "#/content"; // will redirect to your content page
 		}, 500); //will call the function after 2 secs.
 
 	} else if (response.status === 'not_authorized') {

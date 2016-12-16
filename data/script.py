@@ -31,7 +31,7 @@ if __name__ == "__main__":
         count += 1
     content.append({"id":{"S":str(base+count)}, "type":{"S":"franchise"}, "name":{"S":franchise_name}, "series":{"L":seasons}})
 
-    Requests = []
+    requests = []
     for c in content:
         req = {"PutRequest":{"Item":c}}
         requests.append(req)

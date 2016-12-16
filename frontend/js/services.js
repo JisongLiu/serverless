@@ -37,7 +37,11 @@ app.factory('Customers', function($resource) {
 }).factory('Content', function($resource) {
     return $resource('https://k58s2zp6g8.execute-api.us-east-1.amazonaws.com/beta/contents/:id', {});
 }).factory('Comment', function($resource) {
-    return $resource('https://k58s2zp6g8.execute-api.us-east-1.amazonaws.com/beta/comments/:id', {});
+    return $resource('https://k58s2zp6g8.execute-api.us-east-1.amazonaws.com/beta/comments/:id', {}, {
+        create: {
+            method: 'POST'
+        }
+    });
 });
 
 app.service('popupService', function($window) {
