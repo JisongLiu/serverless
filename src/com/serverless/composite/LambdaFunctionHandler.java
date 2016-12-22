@@ -3,8 +3,12 @@ package com.serverless.composite;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
+import com.amazonaws.services.sns.AmazonSNSClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.serverless.Constants;
 import com.serverless.DBManager;
+import com.serverless.SNSClient;
 import com.serverless.address.AddressRequest;
 import com.serverless.address.AddressResponse;
 import com.serverless.comment.CommentRequest;
@@ -36,7 +40,6 @@ import com.amazonaws.services.lambda.invoke.LambdaFunction;
 import com.amazonaws.services.lambda.invoke.LambdaInvokerFactory;
 
 
-
 public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, Object> {
 	
 	public interface AddressService {
@@ -59,7 +62,13 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
 	
     @Override
     public Object handleRequest(CompositeRequest request, Context context) {
-    
+    	
+    	SNSClient snsclient = new SNSClient();
+ 		AmazonSNSClient amazonSNSClient = snsclient.ini();
+// 		System.out.println("-----------" + amazonSNSClient.toString() + "------------");
+ 		ObjectMapper mapper = new ObjectMapper();
+    	String jsonMessage;
+    	
         if (request.object.equals("address")) {
         	//System.out.println("hello");
         	AWSLambdaClient lambda = new AWSLambdaClient();
@@ -68,8 +77,18 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
         	AddressRequest req = new AddressRequest();
         	req.setOperation(request.getOperation());
         	req.setItem(request.getAddress());
-        	AddressResponse res = service.AddressRequestHandler(req);
-
+//        	AddressResponse res = service.AddressRequestHandler(req);
+        	AddressResponse res = new AddressResponse();
+        	
+        	// Publish to SNS address topic
+			try {
+				jsonMessage = mapper.writeValueAsString(req);
+				snsclient.publish(amazonSNSClient, jsonMessage, "address");
+				res.setMessage("Published to SNS address topic");
+			} catch (JsonProcessingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         	return res;
         } else if (request.object.equals("customer")) {
         	//System.out.println("hello2");
@@ -79,8 +98,18 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
         	CustomerRequest req = new CustomerRequest();
         	req.setOperation(request.getOperation());
         	req.setItem(request.getCustomer());
-        	CustomerResponse res = service.CustomerRequestHandler(req);
-
+//        	CustomerResponse res = service.CustomerRequestHandler(req);
+        	AddressResponse res = new AddressResponse();
+        	
+        	// Publish to SNS customer topic
+			try {
+				jsonMessage = mapper.writeValueAsString(req);
+				snsclient.publish(amazonSNSClient, jsonMessage, "customer");
+				res.setMessage("Published to SNS customer topic");
+			} catch (JsonProcessingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         	return res;
         } else if (request.object.equals("content")) {
         	String email = request.customer.email;
@@ -99,8 +128,18 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
         	CommentRequest req = new CommentRequest();
         	req.setOperation(request.getOperation());
         	req.setItem(request.getComment());
-        	CommentResponse res = service.CommentRequestHandler(req);
-
+//        	CommentResponse res = service.CommentRequestHandler(req);
+        	AddressResponse res = new AddressResponse();
+        	
+        	// Publish to SNS comment topic
+			try {
+				jsonMessage = mapper.writeValueAsString(req);
+				snsclient.publish(amazonSNSClient, jsonMessage, "comment");
+				res.setMessage("Published to SNS comment topic");
+			} catch (JsonProcessingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         	return res;
         }
         
