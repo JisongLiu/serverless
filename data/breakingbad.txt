@@ -1,9 +1,9 @@
 Pilot
-The Cat's In The Bag...
-...And the Bag's in the River
+The Cat\'s In The Bag...
+...And the Bag\'s in the River
 Cancer Man
 Gray Matter
-Crazy Handful of Nothin'
+Crazy Handful of Nothin\'
 A No-Rough-Stuff-Type Deal
 $
 Seven Thirty-Seven
@@ -60,7 +60,7 @@ Blood Money
 Buried
 Confessions
 Rabid Dog
-To'hajiilee
+To\'hajiilee
 Ozymandias
 Granite State
 Felina
