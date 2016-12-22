@@ -15,7 +15,7 @@ app.config(function($stateProvider, $httpProvider) {
         controller:'CustomerListController'
     }).state({
         name: 'newCustomer',
-        url:'/customers/new',
+        url:'/register',
         templateUrl:'partials/customer-add.html',
         controller:'CustomerCreateController'
     }).state({

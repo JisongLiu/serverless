@@ -100,14 +100,18 @@ app.controller('CustomerListController', function CustomerListController($scope,
                     console.log(customerUpdate);
                     Customer.update({email: $stateParams.email},
                                     customerUpdate,
-                                    function() { $state.go('customerList'); });
+                                    function() { $state.go('contentBrowser'); });
                 }
             });
         });
 
     };
 }).controller('CustomerCreateController', function($scope, $state, Customers, Address) {
-    $scope.customer = {};
+    $scope.customer = {
+        "email": sessionStorage.email,
+        "firstname": sessionStorage.first_name,
+        "lastname": sessionStorage.last_name
+    };
     $scope.address  = {};
 
     // form validation
@@ -150,8 +154,8 @@ app.controller('CustomerListController', function CustomerListController($scope,
         var zipcode = $("#zipcode").hasClass("ng-dirty");
         var addressDirty = line1 || line2 || city || state || zipcode;
         var customerData = { email: $("#email").val() };
-        if (fname) { customerData.firstname = $("#firstname").val(); }
-        if (lname) { customerData.lastname = $("#lastname").val();   }
+        customerData.firstname = $("#firstname").val();
+        customerData.lastname = $("#lastname").val();
         if (phone) { customerData.phonenumber = $("#phonenumber").val(); }
 
         console.log("adding customer");
@@ -172,12 +176,12 @@ app.controller('CustomerListController', function CustomerListController($scope,
                 customerData.address_ref = barcode;
                 console.log(customerData);
                 Customers.create(customerData, function() { 
-                    $state.go('customerList'); 
+                    $state.go('contentBrowser'); 
                 });
             });
         } else {
             console.log(customerData);
-            Customers.create(customerData, function() { $state.go('customerList'); });
+            Customers.create(customerData, function() { $state.go('contentBrowser'); });
         }
     };
 }).controller('AddressListController', function($scope, Address) {

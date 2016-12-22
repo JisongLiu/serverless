@@ -1,15 +1,28 @@
+var CUSTOMER_GET_URL =  'https://k58s2zp6g8.execute-api.us-east-1.amazonaws.com/beta/customers/';
+
 // This is called with the results from from FB.getLoginStatus().
 function statusChangeCallback(response) {
-	// The response object is returned with a status field that lets the
-	// app know the current login status of the person.
-	// Full docs on the response object can be found in the documentation
-	// for FB.getLoginStatus().
 	if (response.status === 'connected') {
 		// Logged into your app and Facebook.
 		testAPI();
 		setTimeout(function () {
-        if (window.location.href.endsWith("login"))
-			      window.location.href = "#/content"; // will redirect to your content page
+        if (window.location.href.endsWith("login")) {
+        $(document).ready(function() {
+            $.ajax({
+                type: "GET",
+                url: CUSTOMER_GET_URL + sessionStorage.email,
+                success: function(response) {
+                    console.log("ajax success");
+                    window.location.href = "#/content";
+                },
+                error: function(response) {
+                    console.log("ajax error");
+                    window.location.href = "#/register";
+                }
+            });
+        });
+        }
+			   
 		}, 500); //will call the function after 2 secs.
 
 	} else if (response.status === 'not_authorized') {
