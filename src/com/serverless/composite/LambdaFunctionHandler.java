@@ -65,19 +65,16 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
     	
     	SNSClient snsclient = new SNSClient();
  		AmazonSNSClient amazonSNSClient = snsclient.ini();
-// 		System.out.println("-----------" + amazonSNSClient.toString() + "------------");
  		ObjectMapper mapper = new ObjectMapper();
     	String jsonMessage;
     	
         if (request.object.equals("address")) {
         	//System.out.println("hello");
-        	AWSLambdaClient lambda = new AWSLambdaClient();
-        	lambda.configureRegion(Regions.US_EAST_1);
-        	AddressService service = LambdaInvokerFactory.build(AddressService.class, lambda);
+
         	AddressRequest req = new AddressRequest();
+        	req.setObject("address");
         	req.setOperation(request.getOperation());
         	req.setItem(request.getAddress());
-//        	AddressResponse res = service.AddressRequestHandler(req);
         	AddressResponse res = new AddressResponse();
         	
         	// Publish to SNS address topic
@@ -91,15 +88,11 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
 			}
         	return res;
         } else if (request.object.equals("customer")) {
-        	//System.out.println("hello2");
-        	AWSLambdaClient lambda = new AWSLambdaClient();
-        	lambda.configureRegion(Regions.US_EAST_1);
-        	CustomerService service = LambdaInvokerFactory.build(CustomerService.class, lambda);
         	CustomerRequest req = new CustomerRequest();
+        	req.setObject("customer");
         	req.setOperation(request.getOperation());
         	req.setItem(request.getCustomer());
-//        	CustomerResponse res = service.CustomerRequestHandler(req);
-        	AddressResponse res = new AddressResponse();
+        	CustomerResponse res = new CustomerResponse();
         	
         	// Publish to SNS customer topic
 			try {
@@ -121,19 +114,17 @@ public class LambdaFunctionHandler implements RequestHandler<CompositeRequest, O
 
         	return resp;
         } else if (request.object.equals("comment")) {
-        	//System.out.println("hello2");
-        	AWSLambdaClient lambda = new AWSLambdaClient();
-        	lambda.configureRegion(Regions.US_EAST_1);
-        	CommentService service = LambdaInvokerFactory.build(CommentService.class, lambda);
         	CommentRequest req = new CommentRequest();
+        	req.setObject("comment");
         	req.setOperation(request.getOperation());
+        	System.out.println("comment:" + request.getComment());
         	req.setItem(request.getComment());
-//        	CommentResponse res = service.CommentRequestHandler(req);
-        	AddressResponse res = new AddressResponse();
+        	CommentResponse res = new CommentResponse();
         	
         	// Publish to SNS comment topic
 			try {
 				jsonMessage = mapper.writeValueAsString(req);
+				System.out.println(jsonMessage);
 				snsclient.publish(amazonSNSClient, jsonMessage, "comment");
 				res.setMessage("Published to SNS comment topic");
 			} catch (JsonProcessingException e) {
